@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="job">
+<meta name="theme-color" content="#0b1e2b">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%231a3a5c'/><stop offset='1' stop-color='%230a1520'/></linearGradient></defs><rect width='180' height='180' rx='40' fill='url(%23g)'/><text x='90' y='128' font-family='Inter,sans-serif' font-size='110' font-weight='800' fill='white' text-anchor='middle'>J</text></svg>">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%231a3a5c'/><stop offset='1' stop-color='%230a1520'/></linearGradient></defs><rect width='512' height='512' rx='110' fill='url(%23g)'/><text x='256' y='360' font-family='Inter,sans-serif' font-size='320' font-weight='800' fill='white' text-anchor='middle'>J</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>job</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { width: 100%; height: 100%; -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+body {
+    width: 100%; height: 100vh;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f0f0f0;
+    display: flex; justify-content: center; align-items: center;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none; touch-action: manipulation;
+}
+.app {
+    width: 390px; height: 844px;
+    background: linear-gradient(180deg, #0b1e2b 0%, #0a151f 35%, #070e14 70%, #060b0f 100%);
+    overflow: hidden; position: relative; color: #ffffff;
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    padding-top: env(safe-area-inset-top, 0);
+    min-height: 0;
+}
+@media (max-width: 420px) {
+    body { padding: 0; align-items: stretch; }
+    .app { width: 100%; height: 100dvh; box-shadow: none; }
+}
+
+.screen { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.screen.active { display: flex; }
+
+.screen-scroll {
+    flex: 1; min-height: 0;
+    overflow-y: auto; overflow-x: hidden;
+    scrollbar-width: none; -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    padding: 20px 16px 16px 16px;
+}
+.screen-scroll::-webkit-scrollbar { display: none; }
+
+.header { display: flex; justify-content: space-between; align-items: center; padding: 4px 0 16px 0; }
+.logo { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff; line-height: 1; }
+.header-actions { display: flex; align-items: center; gap: 8px; }
+.action-btn {
+    width: 44px; height: 44px; border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.12);
+    display: flex; align-items: center; justify-content: center;
+    color: #ffffff; border: none; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.action-btn svg { width: 22px; height: 22px; stroke: #ffffff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.main-stat-card {
+    background: linear-gradient(145deg, #1c2e3a 0%, #0f1d26 100%);
+    border-radius: 28px; padding: 20px 20px 18px 20px; margin-bottom: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+.main-stat-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.main-stat-left { display: flex; align-items: baseline; gap: 12px; }
+.main-stat-number { font-size: 62px; font-weight: 800; line-height: 1; letter-spacing: -2.5px; color: #ffffff; font-variant-numeric: tabular-nums; }
+.main-stat-label { font-size: 18px; font-weight: 700; line-height: 1.15; color: #ffffff; max-width: 110px; padding-bottom: 6px; }
+.main-stat-label span { display: block; font-weight: 400; color: #a1a1a6; font-size: 16px; margin-top: 2px; }
+.main-stat-right { text-align: right; line-height: 1.1; padding-top: 6px; }
+.main-stat-right .num { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff; font-variant-numeric: tabular-nums; }
+.main-stat-right .lbl { font-size: 13px; font-weight: 500; color: #8e8e93; margin-top: 2px; }
+
+.goals-row { display: flex; gap: 12px; margin-bottom: 16px; }
+.goal-panel {
+    flex: 1; min-width: 0;
+    background-color: #1c1c1e; border-radius: 24px;
+    padding: 16px 14px 14px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+    user-select: none; -webkit-user-select: none;
+}
+.goal-panel .title { font-size: 11px; font-weight: 600; color: #8e8e93; letter-spacing: 0.4px; text-transform: uppercase; margin-bottom: 8px; }
+.goal-panel .numbers { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff; line-height: 1.1; margin-bottom: 10px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.goal-panel .numbers .total { color: #8e8e93; font-weight: 600; font-size: 15px; }
+.progress-track { width: 100%; height: 8px; background-color: #2c2c2e; border-radius: 8px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 8px; }
+.progress-fill.red    { background-color: #ff453a; }
+.progress-fill.orange { background-color: #ff9500; }
+.progress-fill.yellow { background-color: #ffd60a; }
+.progress-fill.green  { background-color: #30d158; }
+.goal-panel .percent { font-size: 11px; font-weight: 600; color: #8e8e93; margin-top: 6px; }
+
+.calendar-wrapper {
+    background-color: #1c1c1e; border-radius: 28px;
+    padding: 18px 16px 16px 16px; margin-bottom: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; min-height: 28px; }
+.cal-title-wrap { flex: 1; padding: 0 8px; }
+.cal-month { font-size: 13px; font-weight: 500; color: #8e8e93; margin-top: 2px; }
+.week-title { font-size: 16px; font-weight: 600; color: #ffffff; cursor: pointer; }
+.cal-nav { width: 28px; height: 28px; border-radius: 50%; background: #2c2c2e; display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; flex-shrink: 0; }
+.cal-nav svg { width: 16px; height: 16px; stroke: #ffffff; stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.week-badge { display: flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 700; color: #ffffff; }
+.week-badge svg { width: 16px; height: 16px; fill: none; stroke: #ffffff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.cal-weekday-header { display: none; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 8px; padding: 0 2px; }
+.cal-weekday-header div { text-align: center; font-size: 11px; font-weight: 600; color: #8e8e93; letter-spacing: 0.3px; }
+.week-days { display: flex; justify-content: space-between; align-items: flex-start; padding: 0 2px; touch-action: pan-y; }
+.calendar-wrapper.expanded .cal-weekday-header { display: grid; }
+.calendar-wrapper.expanded .week-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.calendar-wrapper.expanded .day-item { width: auto; gap: 2px; }
+.calendar-wrapper.expanded .day-dot { width: 34px; height: 34px; font-size: 12px; }
+.calendar-wrapper.expanded .day-label { display: none; }
+.cal-collapse { display: none; width: 100%; background: #2c2c2e; border: none; border-radius: 14px; padding: 12px 0; font-size: 14px; font-weight: 600; color: #ffffff; font-family: inherit; cursor: pointer; margin-top: 14px; -webkit-tap-highlight-color: transparent; }
+.calendar-wrapper.expanded .cal-collapse { display: block; }
+
+.day-item { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 38px; flex-shrink: 0; }
+.day-dot { width: 36px; height: 36px; border-radius: 50%; background-color: #2c2c2e; display: flex; align-items: center; justify-content: center; position: relative; font-size: 13px; font-weight: 700; color: #8e8e93; user-select: none; -webkit-user-select: none; }
+.day-dot.green  { background-color: #30d158; color: #ffffff; }
+.day-dot.yellow { background-color: #ffd60a; color: #000000; }
+.day-dot.orange { background-color: #ff9500; color: #ffffff; }
+.day-dot.red    { background-color: #ff453a; color: #ffffff; }
+.day-dot.blue   { background-color: #2e8eff; color: #ffffff; }
+.day-dot.purple { background-color: #bf5af2; color: #ffffff; }
+.day-dot.gray   { background-color: #2c2c2e; color: #8e8e93; }
+.day-dot.weekend { background-color: #1a1a1c; color: #48484a; }
+.day-dot.today-ring { box-shadow: 0 0 0 2px #ffffff inset; }
+.day-dot.selected { box-shadow: 0 0 0 2px #2e8eff inset; }
+.day-dot.other-month { opacity: 0.35; }
+.day-label { font-size: 13px; font-weight: 600; color: #8e8e93; line-height: 1; }
+.day-label.active { color: #ffffff; font-weight: 700; }
+
+.day-details { background-color: #1c1c1e; border-radius: 24px; padding: 16px; margin-bottom: 16px; border: 1px solid rgba(255, 255, 255, 0.04); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
+.day-details-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.day-details-title { font-size: 16px; font-weight: 700; color: #ffffff; }
+.day-details-close { width: 28px; height: 28px; border-radius: 50%; background: #2c2c2e; display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.day-details-close svg { width: 14px; height: 14px; stroke: #ffffff; stroke-width: 2.5; fill: none; stroke-linecap: round; }
+.day-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.day-details-cell { background: #2c2c2e; border-radius: 16px; padding: 12px; }
+.cell-label { font-size: 11px; font-weight: 500; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px; }
+.cell-value { font-size: 20px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
+.day-details-actions { display: flex; gap: 8px; margin-bottom: 10px; }
+.dd-btn { flex: 1; border: none; border-radius: 14px; padding: 12px 8px; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+.dd-btn.work-yes { background: #2c2c2e; color: #ffffff; }
+.dd-btn.work-no  { background: #2c2c2e; color: #ffffff; }
+.dd-btn.add      { background: #2e8eff; color: #ffffff; width: 100%; }
+.dd-btn.work-yes.active { background: #30d158; color: #ffffff; }
+.dd-btn.work-no.active  { background: #ff453a; color: #ffffff; }
+.dd-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.summary-card { border-radius: 24px; padding: 18px 16px 16px 16px; display: flex; flex-direction: column; justify-content: space-between; min-height: 110px; border: 1px solid rgba(255, 255, 255, 0.04); user-select: none; -webkit-user-select: none; }
+.summary-card.dark { background-color: #1c1c1e; }
+.summary-card.blue { background-color: #2e8eff; border-color: transparent; }
+.summary-card.clickable { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.summary-card.clickable:active { opacity: 0.9; }
+.summary-card .card-label { font-size: 14px; font-weight: 500; color: #8e8e93; margin-bottom: 14px; line-height: 1.2; }
+.summary-card.blue .card-label { color: rgba(255, 255, 255, 0.9); }
+.summary-card .card-value { font-size: 26px; font-weight: 800; line-height: 1.1; color: #ffffff; letter-spacing: -0.8px; font-variant-numeric: tabular-nums; }
+.summary-card.wide { grid-column: span 2; }
+
+.bottom-nav {
+    flex-shrink: 0;
+    margin: 0 auto;
+    margin-bottom: calc(12px + env(safe-area-inset-bottom, 0));
+    margin-top: 8px;
+    background-color: rgba(28, 28, 30, 0.9);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-radius: 40px; padding: 8px 10px;
+    display: flex; justify-content: space-around; align-items: center;
+    width: calc(100% - 32px); max-width: 280px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    z-index: 5;
+}
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; font-weight: 500; color: #8e8e93; padding: 6px 16px; border-radius: 30px; min-width: 0; text-align: center; cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+.nav-item.active { background-color: rgba(255, 255, 255, 0.1); color: #ffffff; }
+.nav-item svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.nav-item span { line-height: 1; }
+
+.sheet-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); opacity: 0; pointer-events: none; transition: opacity 0.25s ease; z-index: 100; }
+.sheet-overlay.open { opacity: 1; pointer-events: auto; }
+.sheet { position: fixed; bottom: 0; left: 50%; transform: translate(-50%, 100%); width: 100%; max-width: 390px; background: #1c1c1e; border-radius: 28px 28px 0 0; padding: 16px 20px 32px 20px; z-index: 101; transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1); color: #ffffff; max-height: 90vh; overflow-y: auto; }
+.sheet.open { transform: translate(-50%, 0); }
+.sheet-handle { width: 40px; height: 4px; border-radius: 4px; background: #3a3a3c; margin: 0 auto 16px auto; }
+.sheet-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.sheet-date { font-size: 14px; font-weight: 500; color: #8e8e93; margin-bottom: 20px; }
+.sheet-row { margin-bottom: 16px; }
+.sheet-label { font-size: 13px; font-weight: 600; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
+.sheet-input { width: 100%; background: #2c2c2e; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 16px; padding: 14px 16px; font-size: 22px; font-weight: 700; color: #ffffff; font-family: inherit; outline: none; font-variant-numeric: tabular-nums; }
+.sheet-input:focus { border-color: #2e8eff; }
+.sheet-input::placeholder { color: #48484a; font-weight: 500; font-size: 18px; }
+.quick-row { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.quick-btn { flex: 1; min-width: 0; background: #2c2c2e; border: none; border-radius: 12px; padding: 10px 0; font-size: 15px; font-weight: 600; color: #ffffff; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+.quick-btn:active { background: #3a3a3c; }
+.sheet-actions { display: flex; gap: 10px; margin-top: 24px; }
+.sheet-btn { flex: 1; border: none; border-radius: 16px; padding: 16px 0; font-size: 16px; font-weight: 700; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+.sheet-btn.cancel { background: #2c2c2e; color: #ffffff; }
+.sheet-btn.save { background: #2e8eff; color: #ffffff; }
+.sheet-btn.danger { background: #ff453a; color: #ffffff; }
+
+.toast-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 200; opacity: 0; transition: opacity 0.2s ease; }
+.toast-overlay.open { opacity: 1; pointer-events: auto; }
+.toast-box { background: #2c2c2e; border-radius: 20px; padding: 20px 22px; max-width: 300px; width: calc(100% - 60px); text-align: center; border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6); transform: scale(0.9); transition: transform 0.2s cubic-bezier(0.32, 0.72, 0, 1); }
+.toast-overlay.open .toast-box { transform: scale(1); }
+.toast-icon { width: 48px; height: 48px; border-radius: 50%; margin: 0 auto 12px auto; display: flex; align-items: center; justify-content: center; }
+.toast-icon.info    { background: rgba(46, 142, 255, 0.15); color: #2e8eff; }
+.toast-icon.success { background: rgba(48, 209, 88, 0.15);  color: #30d158; }
+.toast-icon.warn    { background: rgba(255, 149, 0, 0.15);  color: #ff9500; }
+.toast-icon.error   { background: rgba(255, 69, 58, 0.15);  color: #ff453a; }
+.toast-icon svg { width: 26px; height: 26px; stroke: currentColor; stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.toast-title { font-size: 17px; font-weight: 700; color: #ffffff; margin-bottom: 6px; letter-spacing: -0.2px; }
+.toast-message { font-size: 14px; font-weight: 500; color: #a1a1a6; line-height: 1.35; }
+.toast-actions { display: flex; gap: 8px; margin-top: 16px; }
+.toast-btn { flex: 1; border: none; border-radius: 14px; padding: 12px 0; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; }
+.toast-btn.primary { background: #2e8eff; color: #ffffff; }
+.toast-btn.danger  { background: #ff453a; color: #ffffff; }
+.toast-btn.secondary { background: #3a3a3c; color: #ffffff; }
+
+.pay-hero { background: linear-gradient(160deg, #1c2e3a 0%, #0f1d26 100%); border-radius: 28px; padding: 20px; margin-bottom: 16px; border: 1px solid rgba(255, 255, 255, 0.06); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); position: relative; }
+.pay-hello {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100% - 100px);
+    padding-right: 8px;
+}
+.pay-hero-actions { position: absolute; top: 16px; right: 16px; display: flex; gap: 8px; }
+.hero-btn { width: 40px; height: 40px; border-radius: 50%; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; color: #ffffff; }
+.hero-btn svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.hero-btn.plus  { color: #30d158; }
+.hero-btn.minus { color: #ff453a; }
+.pay-total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.pay-total-amount { font-size: 40px; font-weight: 800; letter-spacing: -1.5px; color: #ffffff; font-variant-numeric: tabular-nums; line-height: 1; }
+.pay-eye { width: 36px; height: 36px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+.pay-eye svg { width: 20px; height: 20px; stroke: #ffffff; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.pay-account { font-size: 13px; font-weight: 500; color: #a1a1a6; }
+
+.tx-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 2px; }
+.tx-title { font-size: 18px; font-weight: 700; color: #ffffff; letter-spacing: -0.3px; }
+.tx-menu { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: #8e8e93; cursor: pointer; }
+.tx-menu svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; }
+.tx-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.tx-item { display: flex; align-items: center; gap: 12px; background: #1c1c1e; border-radius: 20px; padding: 14px; border: 1px solid rgba(255, 255, 255, 0.04); cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; position: relative; }
+.tx-item.active { border-color: rgba(46, 142, 255, 0.5); background: #1e2733; }
+.tx-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 800; font-size: 15px; color: #ffffff; }
+.tx-icon.c1 { background: #2e8eff; }
+.tx-icon.c2 { background: #30d158; }
+.tx-icon.c3 { background: #bf5af2; }
+.tx-icon.c4 { background: #ff9500; }
+.tx-icon.c5 { background: #ff375f; }
+.tx-icon.c6 { background: #5ac8fa; }
+.tx-icon.c7 { background: #ffd60a; color: #000; }
+.tx-icon.c8 { background: #af52de; }
+.tx-icon.c9 { background: #ff6482; }
+.tx-icon.c10 { background: #64d2ff; }
+.tx-info { flex: 1; min-width: 0; }
+.tx-name { font-size: 15px; font-weight: 700; color: #ffffff; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tx-desc { font-size: 12px; font-weight: 500; color: #8e8e93; }
+.tx-amount { font-size: 16px; font-weight: 800; color: #ffffff; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.tx-edit { width: 32px; height: 32px; border-radius: 50%; background: rgba(255, 255, 255, 0.06); display: flex; align-items: center; justify-content: center; color: #8e8e93; margin-left: 4px; flex-shrink: 0; }
+.tx-edit svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; }
+
+.add-money-wrap { display: flex; justify-content: center; margin: 8px 0 20px 0; }
+.add-money-btn { width: 56px; height: 56px; border-radius: 50%; background: #2e8eff; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; -webkit-tap-highlight-color: transparent; box-shadow: 0 8px 20px rgba(46, 142, 255, 0.4); }
+.add-money-btn svg { width: 26px; height: 26px; stroke: #ffffff; stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.add-money-btn:active { transform: scale(0.95); }
+
+.history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 2px; }
+.history-title { font-size: 16px; font-weight: 700; color: #ffffff; letter-spacing: -0.3px; }
+.history-filter { font-size: 12px; font-weight: 600; color: #2e8eff; padding: 4px 10px; border-radius: 12px; background: rgba(46, 142, 255, 0.12); cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; }
+.history-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.history-item { display: flex; align-items: center; gap: 10px; background: #1c1c1e; border-radius: 16px; padding: 12px 14px; border: 1px solid rgba(255, 255, 255, 0.04); }
+.history-icon { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; font-weight: 800; color: #ffffff; }
+.history-icon.plus  { background: rgba(48, 209, 88, 0.2);  color: #30d158; }
+.history-icon.minus { background: rgba(255, 69, 58, 0.2);  color: #ff453a; }
+.history-info { flex: 1; min-width: 0; }
+.history-name { font-size: 14px; font-weight: 700; color: #ffffff; margin-bottom: 2px; }
+.history-meta { font-size: 11px; font-weight: 500; color: #8e8e93; }
+.history-amount { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.history-amount.plus { color: #30d158; }
+.history-amount.minus { color: #ff453a; }
+.empty-state { text-align: center; padding: 40px 20px; color: #8e8e93; font-size: 14px; font-weight: 500; line-height: 1.5; }
+
+.pct-summary { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: #2c2c2e; border-radius: 14px; margin-bottom: 16px; }
+.pct-summary-label { font-size: 13px; font-weight: 600; color: #8e8e93; }
+.pct-summary-value { font-size: 15px; font-weight: 800; color: #ffffff; font-variant-numeric: tabular-nums; }
+.pct-summary-value.warn { color: #ff9500; }
+.pct-summary-value.over { color: #ff453a; }
+.pct-summary-value.ok   { color: #30d158; }
+
+.op-type-row { display: flex; gap: 8px; }
+.op-type-btn { flex: 1; background: #2c2c2e; border: 1px solid transparent; border-radius: 14px; padding: 14px 0; font-size: 14px; font-weight: 700; color: #ffffff; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; }
+.op-type-btn.active { background: rgba(46, 142, 255, 0.15); border-color: #2e8eff; color: #2e8eff; }
+.hint { font-size: 12px; font-weight: 500; color: #8e8e93; padding: 0 4px 8px 4px; line-height: 1.4; }
+.hint.warn { color: #ff9500; }
+
+/* Кнопка очистки */
+.clear-all-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid rgba(255, 69, 58, 0.3);
+    border-radius: 16px;
+    padding: 16px 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #ff453a;
+    font-family: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    margin-bottom: 16px;
+}
+.clear-all-btn:active {
+    background: rgba(255, 69, 58, 0.1);
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+    <div class="screen active" id="screen-home">
+        <div class="screen-scroll">
+            <div class="header">
+                <div class="logo">pushkashuu</div>
+                <div class="header-actions">
+                    <button class="action-btn" id="addBtn" aria-label="Добавить">
+                        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="main-stat-card">
+                <div class="main-stat-header">
+                    <div class="main-stat-left">
+                        <div class="main-stat-number" id="todayLines">0</div>
+                        <div class="main-stat-label">Строк<span>сегодня</span></div>
+                    </div>
+                    <div class="main-stat-right">
+                        <div class="num" id="todayMachines">0</div>
+                        <div class="lbl">Машин</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="goals-row">
+                <div class="goal-panel" id="goalLinesPanel">
+                    <div class="title">Строк за месяц</div>
+                    <div class="numbers"><span id="monthLinesTotal">0</span><span class="total"> / <span id="monthLinesGoal">7 000</span></span></div>
+                    <div class="progress-track"><div class="progress-fill red" id="monthLinesBar" style="width:0%"></div></div>
+                    <div class="percent" id="monthLinesPercent">0% от цели</div>
+                </div>
+                <div class="goal-panel" id="goalMachinesPanel">
+                    <div class="title">Машин за месяц</div>
+                    <div class="numbers"><span id="monthMachinesTotal">0</span><span class="total"> / <span id="monthMachinesGoal">44</span></span></div>
+                    <div class="progress-track"><div class="progress-fill red" id="monthMachinesBar" style="width:0%"></div></div>
+                    <div class="percent" id="monthMachinesPercent">0% от цели</div>
+                </div>
+            </div>
+
+            <div class="calendar-wrapper" id="calendarWrapper">
+                <div class="calendar-header">
+                    <div class="cal-nav" id="calPrev" style="display:none;"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+                    <div class="cal-title-wrap">
+                        <div class="week-title" id="calTitle">Неделя</div>
+                        <div class="cal-month" id="calMonth">&nbsp;</div>
+                    </div>
+                    <div class="cal-nav" id="calNext" style="display:none;"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+                    <div class="week-badge" id="calBadge">
+                        <span id="weekNorm">0</span>
+                        <svg viewBox="0 0 24 24"><path d="M12 2L15 9H22L16 14L19 22L12 17L5 22L8 14L2 9H9L12 2Z" /></svg>
+                    </div>
+                </div>
+                <div class="cal-weekday-header" id="calWeekdays"><div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div></div>
+                <div class="week-days" id="weekDays"></div>
+                <button class="cal-collapse" id="calCollapse" style="display:none;">Свернуть</button>
+            </div>
+
+            <div class="day-details" id="dayDetails" style="display:none;">
+                <div class="day-details-header">
+                    <div class="day-details-title" id="dayDetailsTitle">—</div>
+                    <div class="day-details-close" id="dayDetailsClose"><svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></div>
+                </div>
+                <div class="day-details-grid">
+                    <div class="day-details-cell"><div class="cell-label">Строк</div><div class="cell-value" id="ddLines">0</div></div>
+                    <div class="day-details-cell"><div class="cell-label">Машин</div><div class="cell-value" id="ddMachines">0</div></div>
+                    <div class="day-details-cell"><div class="cell-label">Доход за день</div><div class="cell-value" id="ddIncome">—</div></div>
+                    <div class="day-details-cell"><div class="cell-label">Премия за день</div><div class="cell-value" id="ddBonus">—</div></div>
+                </div>
+                <div class="day-details-actions">
+                    <button class="dd-btn work-yes" id="ddWorkYes">Работал</button>
+                    <button class="dd-btn work-no" id="ddWorkNo">Не работал</button>
+                </div>
+                <button class="dd-btn add" id="ddAdd">Добавить строки / машины</button>
+            </div>
+
+            <div class="summary-grid">
+                <div class="summary-card dark clickable" id="dayIncomeCard">
+                    <div class="card-label">Доход за день</div>
+                    <div class="card-value" id="dayIncome">—</div>
+                </div>
+                <div class="summary-card blue">
+                    <div class="card-label">Премия</div>
+                    <div class="card-value" id="bonus">0 ₽</div>
+                </div>
+                <div class="summary-card dark wide">
+                    <div class="card-label">Зарплата за месяц</div>
+                    <div class="card-value" id="salary">0 ₽</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="screen" id="screen-pay">
+        <div class="screen-scroll">
+            <div class="pay-hero">
+                <div class="pay-hello" id="heroTitle">Накопления</div>
+                <div class="pay-hero-actions">
+                    <button class="hero-btn minus" id="heroMinus"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12" /></svg></button>
+                    <button class="hero-btn plus" id="heroPlus"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg></button>
+                </div>
+                <div class="pay-total-row">
+                    <div class="pay-total-amount" id="heroAmount">0 ₽</div>
+                    <div class="pay-eye" id="payEyeBtn">
+                        <svg viewBox="0 0 24 24" id="payEyeIcon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </div>
+                </div>
+                <div class="pay-account" id="heroSubtitle">Нет выбранного накопления</div>
+            </div>
+
+            <div class="tx-header">
+                <div class="tx-title">Мои накопления</div>
+                <div class="tx-menu" id="createSavingsBtn"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg></div>
+            </div>
+
+            <div class="tx-list" id="savingsList"></div>
+
+            <div class="add-money-wrap">
+                <button class="add-money-btn" id="addMoneyBtn" aria-label="Внести"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg></button>
+            </div>
+
+            <div class="history-header">
+                <div class="history-title" id="historyTitle">История</div>
+                <div class="history-filter" id="historyFilter">Все</div>
+            </div>
+
+            <div class="history-list" id="historyList"></div>
+
+            <!-- Кнопка очистки -->
+            <button class="clear-all-btn" id="clearAllBtn">
+                Очистить все данные
+            </button>
+        </div>
+    </div>
+
+    <div class="bottom-nav" id="bottomNav">
+        <div class="nav-item active" data-screen="home">
+            <svg viewBox="0 0 24 24">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+            <span>Главная</span>
+        </div>
+        <div class="nav-item" data-screen="pay">
+            <svg viewBox="0 0 24 24">
+                <path d="M9 21V3h5a5 5 0 0 1 0 10H9"/>
+                <line x1="6" y1="10" x2="15" y2="10"/>
+                <line x1="6" y1="15" x2="15" y2="15"/>
+            </svg>
+            <span>Накопления</span>
+        </div>
+    </div>
+</div>
+
+<div class="sheet-overlay" id="sheetOverlay"></div>
+
+<div class="sheet" id="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sheetTitle">Добавить за день</div>
+    <div class="sheet-date" id="sheetDate">—</div>
+    <div class="sheet-row">
+        <div class="sheet-label">Строк</div>
+        <input class="sheet-input" id="inputLines" type="number" inputmode="numeric" value="0" min="0">
+        <div class="quick-row">
+            <button class="quick-btn" data-add="lines" data-val="1">+1</button>
+            <button class="quick-btn" data-add="lines" data-val="10">+10</button>
+            <button class="quick-btn" data-add="lines" data-val="50">+50</button>
+            <button class="quick-btn" data-add="lines" data-val="100">+100</button>
+        </div>
+    </div>
+    <div class="sheet-row">
+        <div class="sheet-label">Машин (всего, включая норму)</div>
+        <input class="sheet-input" id="inputMachines" type="number" inputmode="numeric" value="0" min="0">
+        <div class="quick-row">
+            <button class="quick-btn" data-add="machines" data-val="1">+1</button>
+            <button class="quick-btn" data-add="machines" data-val="2">+2</button>
+            <button class="quick-btn" data-add="machines" data-val="3">+3</button>
+        </div>
+    </div>
+    <div class="sheet-actions">
+        <button class="sheet-btn cancel" id="cancelBtn">Отмена</button>
+        <button class="sheet-btn save" id="saveBtn">Сохранить</button>
+    </div>
+</div>
+
+<div class="sheet" id="goalSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="goalTitle">Цель на месяц</div>
+    <div class="sheet-date" id="goalSubtitle">—</div>
+    <div class="sheet-row">
+        <div class="sheet-label" id="goalFieldLabel">Строк в месяц</div>
+        <input class="sheet-input" id="goalInput" type="number" inputmode="numeric" value="0" min="0">
+    </div>
+    <div class="sheet-actions">
+        <button class="sheet-btn cancel" id="goalCancelBtn">Отмена</button>
+        <button class="sheet-btn save" id="goalSaveBtn">Сохранить</button>
+    </div>
+</div>
+
+<div class="sheet" id="savingsSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="savingsTitle">Новое накопление</div>
+    <div class="sheet-date">Всего должно быть ≤ 100%</div>
+    <div class="pct-summary">
+        <div class="pct-summary-label">Занято процентов</div>
+        <div class="pct-summary-value" id="pctSummaryValue">0%</div>
+    </div>
+    <div class="sheet-row">
+        <div class="sheet-label">Название</div>
+        <input class="sheet-input" id="savingsNameInput" type="text" placeholder="Например: Банк" style="font-size:18px;font-weight:600;">
+    </div>
+    <div class="sheet-row">
+        <div class="sheet-label">Процент (1-100)</div>
+        <input class="sheet-input" id="savingsPercentInput" type="number" inputmode="numeric" value="0" min="0" max="100">
+    </div>
+    <div class="sheet-actions">
+        <button class="sheet-btn cancel" id="savingsCancelBtn">Отмена</button>
+        <button class="sheet-btn danger" id="savingsDeleteBtn" style="display:none;">Удалить</button>
+        <button class="sheet-btn save" id="savingsSaveBtn">Сохранить</button>
+    </div>
+</div>
+
+<div class="sheet" id="moneySheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Внести деньги</div>
+    <div class="sheet-date">Распределятся по процентам накоплений</div>
+    <div class="sheet-row">
+        <div class="sheet-label">Тип операции</div>
+        <div class="op-type-row" id="opTypeRow">
+            <button class="op-type-btn active" data-type="Оклад">Оклад</button>
+            <button class="op-type-btn" data-type="Премия">Премия</button>
+            <button class="op-type-btn" data-type="Другое">Другое</button>
+        </div>
+    </div>
+    <div class="sheet-row">
+        <div class="sheet-label">Сумма (₽)</div>
+        <input class="sheet-input" id="moneyAmountInput" type="number" inputmode="numeric" value="0" min="0">
+        <div class="quick-row">
+            <button class="quick-btn" data-money="1000">+1 000</button>
+            <button class="quick-btn" data-money="5000">+5 000</button>
+            <button class="quick-btn" data-money="10000">+10 000</button>
+            <button class="quick-btn" data-money="25000">+25 000</button>
+        </div>
+    </div>
+    <div class="hint" id="moneyHint"></div>
+    <div class="sheet-actions">
+        <button class="sheet-btn cancel" id="moneyCancelBtn">Отмена</button>
+        <button class="sheet-btn save" id="moneySaveBtn">Распределить</button>
+    </div>
+</div>
+
+<div class="sheet" id="takeSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="takeTitle">Забрать из накопления</div>
+    <div class="sheet-date" id="takeSubtitle">—</div>
+    <div class="sheet-row">
+        <div class="sheet-label">Сумма (₽)</div>
+        <input class="sheet-input" id="takeAmountInput" type="number" inputmode="numeric" value="0" min="0">
+        <div class="quick-row">
+            <button class="quick-btn" data-take="1000">1 000</button>
+            <button class="quick-btn" data-take="5000">5 000</button>
+            <button class="quick-btn" data-take="10000">10 000</button>
+            <button class="quick-btn" data-take="all">Всё</button>
+        </div>
+    </div>
+    <div class="hint" id="takeHint"></div>
+    <div class="sheet-actions">
+        <button class="sheet-btn cancel" id="takeCancelBtn">Отмена</button>
+        <button class="sheet-btn danger" id="takeSaveBtn">Забрать</button>
+    </div>
+</div>
+
+<div class="toast-overlay" id="toastOverlay">
+    <div class="toast-box">
+        <div class="toast-icon" id="toastIcon">
+            <svg viewBox="0 0 24 24" id="toastIconSvg"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div class="toast-title" id="toastTitle">Заголовок</div>
+        <div class="toast-message" id="toastMessage">Сообщение</div>
+        <div class="toast-actions" id="toastActions"></div>
+    </div>
+</div>
+
+<script>
+'use strict';
+
+/* =========================================================
+   УТИЛИТЫ
+   ========================================================= */
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function formatMoney(v) { const n = Number(v); if (!isFinite(n)) return '0 ₽'; return Math.round(n).toLocaleString('ru-RU') + ' ₽'; }
+function formatPercent(v) { const n = Number(v); if (!isFinite(n)) return '0%'; return (Math.round(n * 10) / 10).toLocaleString('ru-RU') + '%'; }
+function safeGet(key, fallback) { try { const raw = localStorage.getItem(key); if (raw === null) return fallback; return JSON.parse(raw); } catch(e) { console.warn('[job] safeGet fail:', key, e); return fallback; } }
+function safeSet(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch(e) { console.warn('[job] safeSet fail:', key, e); } }
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+const toastOverlay = document.getElementById('toastOverlay');
+const toastIcon = document.getElementById('toastIcon');
+const toastIconSvg = document.getElementById('toastIconSvg');
+const toastTitle = document.getElementById('toastTitle');
+const toastMessage = document.getElementById('toastMessage');
+const toastActions = document.getElementById('toastActions');
+let toastTimeout = null;
+
+function hideToast() {
+    toastOverlay.classList.remove('open');
+    toastActions.innerHTML = '';
+    if (toastTimeout) clearTimeout(toastTimeout);
+}
+function showToast(opts) {
+    const { type = 'info', title = '', message = '', actions = [], autoClose = 2200 } = opts;
+    toastIcon.className = 'toast-icon ' + type;
+    const ICONS = {
+        info:    '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+        success: '<polyline points="20 6 9 17 4 12"/>',
+        warn:    '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+        error:   '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>'
+    };
+    toastIconSvg.innerHTML = ICONS[type] || ICONS.info;
+    toastTitle.textContent = title;
+    toastMessage.textContent = message;
+    toastActions.innerHTML = '';
+    if (actions.length > 0) {
+        actions.forEach(a => {
+            const btn = document.createElement('button');
+            btn.className = 'toast-btn ' + (a.variant || 'secondary');
+            btn.textContent = a.label;
+            btn.addEventListener('click', () => { hideToast(); if (typeof a.onClick === 'function') a.onClick(); });
+            toastActions.appendChild(btn);
+        });
+        if (toastTimeout) clearTimeout(toastTimeout);
+    } else if (autoClose > 0) {
+        toastTimeout = setTimeout(() => hideToast(), autoClose);
+    }
+    toastOverlay.classList.add('open');
+}
+toastOverlay.addEventListener('click', (e) => { if (e.target === toastOverlay) hideToast(); });
+
+function notifyInfo(t, m)    { showToast({ type: 'info', title: t, message: m }); }
+function notifySuccess(t, m) { showToast({ type: 'success', title: t, message: m }); }
+function notifyWarn(t, m)    { showToast({ type: 'warn', title: t, message: m }); }
+function notifyError(t, m)   { showToast({ type: 'error', title: t, message: m }); }
+function confirmDialog(title, message, onConfirm, opts = {}) {
+    showToast({
+        type: opts.type || 'warn',
+        title: title, message: message, autoClose: 0,
+        actions: [
+            { label: 'Отмена', variant: 'secondary', onClick: () => {} },
+            { label: opts.confirmLabel || 'Подтвердить', variant: opts.confirmVariant || 'primary', onClick: onConfirm }
+        ]
+    });
+}
+
+/* =========================================================
+   НАСТРОЙКИ
+   ========================================================= */
+const DEFAULT_SETTINGS = { salary: 60000, normLines: 350, normMachines: 1, linePrice: 5, machineBonus: 500, tax: 0.13, goalLines: 7000, goalMachines: 44 };
+const STORAGE_KEY = 'pushkashuu';
+const SETTINGS_KEY = 'pushkashuu_settings';
+const SAVINGS_KEY = 'pushkashuu_savings_v1';
+
+const rawSettings = safeGet(SETTINGS_KEY, null);
+let settings = { ...DEFAULT_SETTINGS, ...(rawSettings && typeof rawSettings === 'object' ? rawSettings : {}) };
+function persistSettings(s) { safeSet(SETTINGS_KEY, s); }
+
+function SALARY_NET()      { return settings.salary * (1 - settings.tax); }
+function WORK_DAYS()       { return 22; }
+function SALARY_PER_DAY()  { return SALARY_NET() / WORK_DAYS(); }
+function NORM_LINES()      { return settings.normLines; }
+function NORM_MACHINES()   { return settings.normMachines; }
+function LINE_PRICE()      { return settings.linePrice; }
+function MACHINE_BONUS()   { return settings.machineBonus; }
+function TAX()             { return settings.tax; }
+function GOAL_LINES()      { return settings.goalLines; }
+function GOAL_MACHINES()   { return settings.goalMachines; }
+
+const MONTHS_RU = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const DAYS_RU = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+
+/* =========================================================
+   ДАННЫЕ
+   ========================================================= */
+function loadData() { const d = safeGet(STORAGE_KEY, {}); return (d && typeof d === 'object' && !Array.isArray(d)) ? d : {}; }
+function saveData(data) { safeSet(STORAGE_KEY, data); }
+
+function dateKey(d) { const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); return y + '-' + m + '-' + day; }
+function getTodayKey() { return dateKey(new Date()); }
+function isWeekend(d) { const g = d.getDay(); return g === 0 || g === 6; }
+function parseKey(key) { try { const p = String(key).split('-').map(Number); if (p.length !== 3 || p.some(n => !isFinite(n))) return new Date(); return new Date(p[0], p[1] - 1, p[2]); } catch(e) { return new Date(); } }
+
+/* =========================================================
+   НАКОПЛЕНИЯ
+   ========================================================= */
+function loadSavings() {
+    const raw = safeGet(SAVINGS_KEY, null);
+    if (!raw || typeof raw !== 'object') return { savings: [], operations: [] };
+    let savings = Array.isArray(raw.savings) ? raw.savings : [];
+    let operations = Array.isArray(raw.operations) ? raw.operations : [];
+    savings = savings.filter(s => s && typeof s === 'object' && typeof s.id === 'string' && typeof s.name === 'string').map(s => ({ id: s.id, name: String(s.name).slice(0, 50), percent: Math.max(0, Math.min(100, Number(s.percent) || 0)), balance: Math.max(0, Number(s.balance) || 0), color: typeof s.color === 'string' ? s.color : 'c1' }));
+    operations = operations.filter(o => o && typeof o === 'object' && typeof o.id === 'string' && typeof o.savingsId === 'string').map(o => ({ id: o.id, savingsId: o.savingsId, type: String(o.type || 'Операция').slice(0, 30), amount: Math.max(0, Number(o.amount) || 0), date: Number(o.date) || Date.now(), kind: o.kind === 'minus' ? 'minus' : 'plus' }));
+    return { savings, operations };
+}
+function persistSavings(state) { safeSet(SAVINGS_KEY, state); }
+
+let savingsState = loadSavings();
+let selectedSavingsId = savingsState.savings.length > 0 ? savingsState.savings[0].id : null;
+let historyFilterMode = 'selected';
+let payHidden = false;
+
+const SAVINGS_COLORS = ['c1','c2','c3','c4','c5','c6','c7','c8','c9','c10'];
+const MAX_SAVINGS = 10;
+
+function getTotalPercent(excludeId) { return savingsState.savings.filter(s => s.id !== excludeId).reduce((sum, s) => sum + (Number(s.percent) || 0), 0); }
+function getSelectedSavings() { if (!selectedSavingsId) return null; return savingsState.savings.find(s => s.id === selectedSavingsId) || null; }
+
+/* =========================================================
+   ГЛАВНАЯ
+   ========================================================= */
+function getDayStatus(entry) {
+    if (!entry || !entry.worked) return 'gray';
+    const lines = Number(entry.lines) || 0;
+    const machines = Number(entry.machines) || 0;
+    const nL = NORM_LINES(), nM = NORM_MACHINES();
+    if (lines >= nL && machines >= nM) {
+        if (lines >= nL * 1.3 && machines >= nM * 2) return 'purple';
+        if (lines >= nL * 1.15 && machines >= nM * 1.5) return 'blue';
+        return 'green';
+    }
+    if (lines >= nL * 0.7 || machines >= nM * 0.5) return 'yellow';
+    if (lines > 0 || machines > 0) return 'orange';
+    return 'red';
+}
+
+function calcDayBonus(lines, machines) {
+    const l = Number(lines) || 0;
+    const m = Number(machines) || 0;
+    const linesNet = l * LINE_PRICE() * (1 - TAX());
+    const machinesOver = Math.max(0, m - NORM_MACHINES());
+    const machinesNet = machinesOver * MACHINE_BONUS() * (1 - TAX());
+    return linesNet + machinesNet;
+}
+
+function calcDayIncome(entry) { if (!entry || !entry.worked) return 0; return SALARY_PER_DAY() + calcDayBonus(entry.lines || 0, entry.machines || 0); }
+
+function calcMonthStats() {
+    const data = loadData();
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    let totalLines = 0, totalMachines = 0, workDays = 0, salarySum = 0, bonusSum = 0;
+    Object.keys(data).forEach(key => {
+        const p = String(key).split('-').map(Number);
+        if (p[0] === y && p[1] === m + 1) {
+            const e = data[key];
+            if (e && e.worked) {
+                workDays++;
+                totalLines += Number(e.lines) || 0;
+                totalMachines += Number(e.machines) || 0;
+                salarySum += SALARY_PER_DAY();
+                bonusSum += calcDayBonus(e.lines || 0, e.machines || 0);
+            }
+        }
+    });
+    return { totalLines, totalMachines, workDays, salaryNet: salarySum, bonusNet: bonusSum, total: salarySum + bonusSum };
+}
+
+function progressClass(percent) {
+    if (percent <= 20) return 'red';
+    if (percent <= 50) return 'orange';
+    if (percent <= 80) return 'yellow';
+    return 'green';
+}
+
+function renderHome() {
+    const data = loadData();
+    const todayKey = getTodayKey();
+    const today = data[todayKey] || { lines: 0, machines: 0, worked: false };
+    document.getElementById('todayLines').textContent = Number(today.lines) || 0;
+    document.getElementById('todayMachines').textContent = Number(today.machines) || 0;
+    renderGoals();
+    renderWeek(data);
+    const dayIncomeEl = document.getElementById('dayIncome');
+    const now = new Date();
+    if (isWeekend(now) || !today.worked) dayIncomeEl.textContent = '—';
+    else dayIncomeEl.textContent = formatMoney(calcDayIncome(today));
+    const month = calcMonthStats();
+    document.getElementById('bonus').textContent = formatMoney(month.bonusNet);
+    document.getElementById('salary').textContent = formatMoney(month.total);
+}
+
+function renderGoals() {
+    const month = calcMonthStats();
+    const linesTotal = month.totalLines;
+    const linesGoal = GOAL_LINES();
+    const linesPercent = linesGoal > 0 ? Math.min(100, Math.round((linesTotal / linesGoal) * 100)) : 0;
+    document.getElementById('monthLinesTotal').textContent = linesTotal.toLocaleString('ru-RU');
+    document.getElementById('monthLinesGoal').textContent = linesGoal.toLocaleString('ru-RU');
+    document.getElementById('monthLinesBar').style.width = linesPercent + '%';
+    document.getElementById('monthLinesBar').className = 'progress-fill ' + progressClass(linesPercent);
+    document.getElementById('monthLinesPercent').textContent = linesPercent + '% от цели';
+
+    const machinesTotal = month.totalMachines;
+    const machinesGoal = GOAL_MACHINES();
+    const machinesPercent = machinesGoal > 0 ? Math.min(100, Math.round((machinesTotal / machinesGoal) * 100)) : 0;
+    document.getElementById('monthMachinesTotal').textContent = machinesTotal;
+    document.getElementById('monthMachinesGoal').textContent = machinesGoal;
+    document.getElementById('monthMachinesBar').style.width = machinesPercent + '%';
+    document.getElementById('monthMachinesBar').className = 'progress-fill ' + progressClass(machinesPercent);
+    document.getElementById('monthMachinesPercent').textContent = machinesPercent + '% от цели';
+}
+
+/* =========================================================
+   КАЛЕНДАРЬ
+   ========================================================= */
+let weekOffset = 0;
+let currentMonth = new Date();
+let selectedDayKey = null;
+
+const calendarWrapper = document.getElementById('calendarWrapper');
+const calTitle = document.getElementById('calTitle');
+const calMonth = document.getElementById('calMonth');
+const calPrev = document.getElementById('calPrev');
+const calNext = document.getElementById('calNext');
+const calBadge = document.getElementById('calBadge');
+const calCollapse = document.getElementById('calCollapse');
+const weekDaysEl = document.getElementById('weekDays');
+
+function renderWeek(data) {
+    if (!data) data = loadData();
+    const now = new Date();
+    const todayKey = dateKey(now);
+    const monday = new Date(now);
+    const day = (monday.getDay() + 6) % 7;
+    monday.setDate(monday.getDate() - day + weekOffset * 7);
+    monday.setHours(0, 0, 0, 0);
+
+    const startMonth = monday.getMonth();
+    const endDate = new Date(monday.getTime() + 6 * 86400000);
+    const endMonth = endDate.getMonth();
+    const year = monday.getFullYear();
+    let monthLabel;
+    if (startMonth === endMonth) monthLabel = MONTHS_RU[startMonth] + ' ' + year;
+    else monthLabel = MONTHS_RU[startMonth] + ' – ' + MONTHS_RU[endMonth] + ' ' + year;
+    calMonth.textContent = monthLabel;
+    calMonth.style.display = 'block';
+
+    weekDaysEl.innerHTML = '';
+    let weekNorm = 0;
+
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        const key = dateKey(d);
+        const entry = data[key] || { lines: 0, machines: 0, worked: false };
+        const weekend = isWeekend(d);
+        const status = weekend ? 'weekend' : getDayStatus(entry);
+        const isToday = key === todayKey;
+
+        const item = document.createElement('div');
+        item.className = 'day-item';
+        item.dataset.date = key;
+        if (weekend) item.dataset.weekend = '1';
+
+        const dot = document.createElement('div');
+        dot.className = 'day-dot ' + status;
+        if (isToday && !weekend) dot.classList.add('today-ring');
+        dot.textContent = d.getDate();
+
+        const label = document.createElement('div');
+        label.className = 'day-label' + ((isToday && !weekend) ? ' active' : '');
+        label.textContent = DAYS_RU[i];
+
+        item.appendChild(dot);
+        item.appendChild(label);
+        weekDaysEl.appendChild(item);
+
+        if (entry.worked && (Number(entry.lines) || 0) >= NORM_LINES() && (Number(entry.machines) || 0) >= NORM_MACHINES()) weekNorm++;
+    }
+    document.getElementById('weekNorm').textContent = weekNorm;
+}
+
+function renderMonth(date) {
+    calMonth.textContent = MONTHS_RU[date.getMonth()] + ' ' + date.getFullYear();
+    const data = loadData();
+    const y = date.getFullYear();
+    const m = date.getMonth();
+    const firstDay = new Date(y, m, 1);
+    const lastDay = new Date(y, m + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startWeekday = (firstDay.getDay() + 6) % 7;
+    const prevMonthLast = new Date(y, m, 0).getDate();
+    const todayKey = getTodayKey();
+    weekDaysEl.innerHTML = '';
+    for (let i = 0; i < 42; i++) {
+        const cellIndex = i - startWeekday;
+        let dayDate, isOtherMonth = false;
+        if (cellIndex < 0) { dayDate = new Date(y, m - 1, prevMonthLast + cellIndex + 1); isOtherMonth = true; }
+        else if (cellIndex >= daysInMonth) { dayDate = new Date(y, m + 1, cellIndex - daysInMonth + 1); isOtherMonth = true; }
+        else { dayDate = new Date(y, m, cellIndex + 1); }
+        const key = dateKey(dayDate);
+        const entry = data[key] || { lines: 0, machines: 0, worked: false };
+        const weekend = isWeekend(dayDate);
+        const status = weekend ? 'weekend' : getDayStatus(entry);
+        const isToday = key === todayKey;
+        const isSelected = key === selectedDayKey;
+        const item = document.createElement('div');
+        item.className = 'day-item';
+        item.dataset.date = key;
+        if (weekend) item.dataset.weekend = '1';
+        const dot = document.createElement('div');
+        dot.className = 'day-dot ' + status;
+        if (isOtherMonth) dot.classList.add('other-month');
+        if (isToday && !weekend) dot.classList.add('today-ring');
+        if (isSelected) dot.classList.add('selected');
+        dot.textContent = dayDate.getDate();
+        item.appendChild(dot);
+        weekDaysEl.appendChild(item);
+    }
+}
+
+function expandCalendar() { calendarWrapper.classList.add('expanded'); calTitle.textContent = 'Календарь'; calPrev.style.display = 'flex'; calNext.style.display = 'flex'; calBadge.style.display = 'none'; renderMonth(currentMonth); }
+function collapseCalendar() { calendarWrapper.classList.remove('expanded'); calTitle.textContent = 'Неделя'; calPrev.style.display = 'none'; calNext.style.display = 'none'; calBadge.style.display = 'flex'; renderWeek(loadData()); }
+
+calTitle.addEventListener('click', () => { if (calendarWrapper.classList.contains('expanded')) collapseCalendar(); else expandCalendar(); });
+calCollapse.addEventListener('click', collapseCalendar);
+calPrev.addEventListener('click', (e) => { e.stopPropagation(); currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1); renderMonth(currentMonth); });
+calNext.addEventListener('click', (e) => { e.stopPropagation(); currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1); renderMonth(currentMonth); });
+
+let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
+weekDaysEl.addEventListener('touchstart', (e) => { const t = e.touches[0]; touchStartX = t.clientX; touchStartY = t.clientY; touchStartTime = Date.now(); }, { passive: true });
+weekDaysEl.addEventListener('touchend', (e) => {
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+    const dt = Date.now() - touchStartTime;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) && dt < 500) {
+        if (calendarWrapper.classList.contains('expanded')) {
+            if (dx < 0) currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+            else currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+            renderMonth(currentMonth);
+        } else {
+            if (dx < 0) weekOffset += 1; else weekOffset -= 1;
+            renderWeek(loadData());
+        }
+    }
+}, { passive: true });
+
+weekDaysEl.addEventListener('click', (e) => {
+    const item = e.target.closest('.day-item');
+    if (!item) return;
+    const key = item.dataset.date;
+    if (!key) return;
+    if (!calendarWrapper.classList.contains('expanded')) {
+        if (e.target.closest('.day-dot')) { selectedDayKey = key; expandCalendar(); showDayDetails(key); }
+        else expandCalendar();
+        return;
+    }
+    selectedDayKey = key;
+    renderMonth(currentMonth);
+    showDayDetails(key);
+});
+
+function showDayDetails(key) {
+    const data = loadData();
+    const entry = data[key] || { lines: 0, machines: 0, worked: false };
+    const date = parseKey(key);
+    const dayNames = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+    const weekend = isWeekend(date);
+    document.getElementById('dayDetailsTitle').textContent = dayNames[date.getDay()] + ', ' + date.getDate() + ' ' + MONTHS_RU[date.getMonth()];
+    document.getElementById('ddLines').textContent = Number(entry.lines) || 0;
+    document.getElementById('ddMachines').textContent = Number(entry.machines) || 0;
+    if (!entry.worked || weekend) {
+        document.getElementById('ddIncome').textContent = '—';
+        document.getElementById('ddBonus').textContent = '—';
+    } else {
+        document.getElementById('ddIncome').textContent = formatMoney(calcDayIncome(entry));
+        document.getElementById('ddBonus').textContent = formatMoney(calcDayBonus(entry.lines || 0, entry.machines || 0));
+    }
+    const yesBtn = document.getElementById('ddWorkYes');
+    const noBtn = document.getElementById('ddWorkNo');
+    const addBtn = document.getElementById('ddAdd');
+    if (weekend) {
+        yesBtn.disabled = true; noBtn.disabled = true; addBtn.disabled = true;
+        addBtn.textContent = 'Выходной — ввод недоступен';
+    } else {
+        yesBtn.disabled = false; noBtn.disabled = false; addBtn.disabled = false;
+        addBtn.textContent = 'Добавить строки / машины';
+    }
+    yesBtn.classList.toggle('active', entry.worked === true && !weekend);
+    noBtn.classList.toggle('active', entry.worked === false && !weekend);
+    document.getElementById('dayDetails').style.display = 'block';
+}
+
+document.getElementById('dayDetailsClose').addEventListener('click', () => { document.getElementById('dayDetails').style.display = 'none'; selectedDayKey = null; if (calendarWrapper.classList.contains('expanded')) renderMonth(currentMonth); else renderWeek(loadData()); });
+document.getElementById('ddWorkYes').addEventListener('click', () => { if (!selectedDayKey) return; const d = parseKey(selectedDayKey); if (isWeekend(d)) return; const data = loadData(); const e = data[selectedDayKey] || { lines: 0, machines: 0 }; e.worked = true; data[selectedDayKey] = e; saveData(data); showDayDetails(selectedDayKey); renderHome(); });
+document.getElementById('ddWorkNo').addEventListener('click', () => { if (!selectedDayKey) return; const d = parseKey(selectedDayKey); if (isWeekend(d)) return; const data = loadData(); const e = data[selectedDayKey] || { lines: 0, machines: 0 }; e.worked = false; data[selectedDayKey] = e; saveData(data); showDayDetails(selectedDayKey); renderHome(); });
+document.getElementById('ddAdd').addEventListener('click', () => { if (!selectedDayKey) return; const d = parseKey(selectedDayKey); if (isWeekend(d)) return; openSheetFor(selectedDayKey); });
+
+/* =========================================================
+   BOTTOM SHEET — ВВОД
+   ========================================================= */
+const overlay = document.getElementById('sheetOverlay');
+const sheet = document.getElementById('sheet');
+const inputLines = document.getElementById('inputLines');
+const inputMachines = document.getElementById('inputMachines');
+const sheetDate = document.getElementById('sheetDate');
+const sheetTitle = document.getElementById('sheetTitle');
+let sheetTargetKey = null;
+
+function openSheetFor(key) {
+    const d = parseKey(key);
+    if (isWeekend(d)) return;
+    sheetTargetKey = key;
+    const data = loadData();
+    const entry = data[key] || { lines: 0, machines: 0 };
+    inputLines.value = Number(entry.lines) || 0;
+    inputMachines.value = Number(entry.machines) || 0;
+    const dayNames = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+    sheetTitle.textContent = dayNames[d.getDay()] + ', ' + d.getDate() + ' ' + MONTHS_RU[d.getMonth()];
+    sheetDate.textContent = d.getFullYear();
+    overlay.classList.add('open');
+    sheet.classList.add('open');
+}
+
+function openSheetToday() { const now = new Date(); if (isWeekend(now)) { notifyWarn('Выходной', 'Сегодня выходной — ввод недоступен'); return; } openSheetFor(getTodayKey()); }
+function closeSheet() { overlay.classList.remove('open'); sheet.classList.remove('open'); goalSheet.classList.remove('open'); savingsSheet.classList.remove('open'); moneySheet.classList.remove('open'); takeSheet.classList.remove('open'); }
+function saveSheet() {
+    if (!sheetTargetKey) return;
+    const d = parseKey(sheetTargetKey);
+    if (isWeekend(d)) return;
+    const lines = Math.max(0, parseInt(inputLines.value) || 0);
+    const machines = Math.max(0, parseInt(inputMachines.value) || 0);
+    const data = loadData();
+    const existing = data[sheetTargetKey] || {};
+    data[sheetTargetKey] = { lines, machines, worked: existing.worked === false ? false : true };
+    saveData(data);
+    closeSheet();
+    renderHome();
+    if (selectedDayKey) showDayDetails(selectedDayKey);
+}
+
+document.getElementById('addBtn').addEventListener('click', openSheetToday);
+document.getElementById('cancelBtn').addEventListener('click', closeSheet);
+document.getElementById('saveBtn').addEventListener('click', saveSheet);
+document.querySelectorAll('.quick-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const field = btn.dataset.add;
+        const val = parseInt(btn.dataset.val);
+        if (field === 'lines') inputLines.value = (parseInt(inputLines.value) || 0) + val;
+        else if (field === 'machines') inputMachines.value = (parseInt(inputMachines.value) || 0) + val;
+    });
+});
+
+/* ЦЕЛЬ */
+const goalSheet = document.getElementById('goalSheet');
+const goalTitle = document.getElementById('goalTitle');
+const goalSubtitle = document.getElementById('goalSubtitle');
+const goalFieldLabel = document.getElementById('goalFieldLabel');
+const goalInput = document.getElementById('goalInput');
+let goalTarget = null;
+
+function openGoalSheet(type) {
+    goalTarget = type;
+    const now = new Date();
+    goalSubtitle.textContent = MONTHS_RU[now.getMonth()] + ' ' + now.getFullYear();
+    if (type === 'lines') { goalTitle.textContent = 'Цель по строкам'; goalFieldLabel.textContent = 'Строк в месяц'; goalInput.value = GOAL_LINES(); }
+    else { goalTitle.textContent = 'Цель по машинам'; goalFieldLabel.textContent = 'Машин в месяц'; goalInput.value = GOAL_MACHINES(); }
+    overlay.classList.add('open');
+    goalSheet.classList.add('open');
+}
+
+document.getElementById('goalLinesPanel').addEventListener('click', () => openGoalSheet('lines'));
+document.getElementById('goalMachinesPanel').addEventListener('click', () => openGoalSheet('machines'));
+document.getElementById('goalCancelBtn').addEventListener('click', closeSheet);
+document.getElementById('goalSaveBtn').addEventListener('click', () => {
+    const val = Math.max(1, parseInt(goalInput.value) || 1);
+    if (goalTarget === 'lines') settings.goalLines = val; else settings.goalMachines = val;
+    persistSettings(settings);
+    closeSheet();
+    renderGoals();
+    notifySuccess('Сохранено', 'Цель обновлена');
+});
+
+/* =========================================================
+   ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ
+   ========================================================= */
+const bottomNav = document.getElementById('bottomNav');
+const screens = { home: document.getElementById('screen-home'), pay: document.getElementById('screen-pay') };
+
+bottomNav.addEventListener('click', (e) => {
+    const item = e.target.closest('.nav-item');
+    if (!item) return;
+    const key = item.dataset.screen;
+    if (!key || !screens[key]) return;
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    item.classList.add('active');
+    Object.keys(screens).forEach(k => screens[k].classList.remove('active'));
+    screens[key].classList.add('active');
+    if (key === 'pay') renderSavings();
+});
+
+/* =========================================================
+   НАКОПЛЕНИЯ
+   ========================================================= */
+function renderSavings() {
+    const state = savingsState;
+    const selected = getSelectedSavings();
+
+    const heroTitleEl = document.getElementById('heroTitle');
+    const heroAmountEl = document.getElementById('heroAmount');
+    const heroSubtitleEl = document.getElementById('heroSubtitle');
+
+    heroTitleEl.textContent = selected ? selected.name : 'Накопления';
+
+    if (payHidden) heroAmountEl.textContent = '••••••';
+    else heroAmountEl.textContent = formatMoney(selected ? (selected.balance || 0) : 0);
+
+    if (selected) heroSubtitleEl.textContent = formatPercent(selected.percent) + ' от ЗП';
+    else heroSubtitleEl.textContent = 'Нет выбранного накопления';
+
+    const list = document.getElementById('savingsList');
+    list.innerHTML = '';
+    if (state.savings.length === 0) {
+        list.innerHTML = '<div class="empty-state">Нет накоплений.<br>Нажми +, чтобы создать первое.</div>';
+    } else {
+        state.savings.forEach(s => {
+            const item = document.createElement('div');
+            item.className = 'tx-item' + (s.id === selectedSavingsId ? ' active' : '');
+            item.dataset.id = s.id;
+            const icon = document.createElement('div');
+            icon.className = 'tx-icon ' + (s.color || 'c1');
+            icon.textContent = (s.name || '?').trim().charAt(0).toUpperCase() || '?';
+            const info = document.createElement('div');
+            info.className = 'tx-info';
+            const name = document.createElement('div');
+            name.className = 'tx-name';
+            name.textContent = s.name || 'Без названия';
+            const desc = document.createElement('div');
+            desc.className = 'tx-desc';
+            desc.textContent = formatPercent(s.percent) + ' от ЗП';
+            info.appendChild(name); info.appendChild(desc);
+            const amount = document.createElement('div');
+            amount.className = 'tx-amount';
+            amount.textContent = payHidden ? '•••' : formatMoney(s.balance || 0);
+            const edit = document.createElement('div');
+            edit.className = 'tx-edit';
+            edit.dataset.edit = s.id;
+            edit.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+            item.appendChild(icon); item.appendChild(info); item.appendChild(amount); item.appendChild(edit);
+            list.appendChild(item);
+        });
+    }
+    renderHistory();
+}
+
+function renderHistory() {
+    const list = document.getElementById('historyList');
+    const filterEl = document.getElementById('historyFilter');
+    const titleEl = document.getElementById('historyTitle');
+    list.innerHTML = '';
+    let ops = savingsState.operations.slice();
+    if (historyFilterMode === 'selected' && selectedSavingsId) {
+        ops = ops.filter(o => o.savingsId === selectedSavingsId);
+        const sel = getSelectedSavings();
+        titleEl.textContent = sel ? ('История · ' + sel.name) : 'История';
+        filterEl.textContent = 'Все';
+    } else {
+        titleEl.textContent = 'История · все';
+        filterEl.textContent = 'Выбранное';
+    }
+    ops.sort((a, b) => (b.date || 0) - (a.date || 0));
+    if (ops.length === 0) { list.innerHTML = '<div class="empty-state">Пока пусто</div>'; return; }
+    ops.forEach(op => {
+        const s = savingsState.savings.find(x => x.id === op.savingsId);
+        const name = s ? s.name : 'Удалено';
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        const icon = document.createElement('div');
+        icon.className = 'history-icon ' + (op.kind === 'plus' ? 'plus' : 'minus');
+        icon.textContent = op.kind === 'plus' ? '+' : '−';
+        const info = document.createElement('div');
+        info.className = 'history-info';
+        const nameEl = document.createElement('div');
+        nameEl.className = 'history-name';
+        nameEl.textContent = (op.type || 'Операция') + ' · ' + name;
+        const meta = document.createElement('div');
+        meta.className = 'history-meta';
+        meta.textContent = new Date(op.date).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+        info.appendChild(nameEl); info.appendChild(meta);
+        const amount = document.createElement('div');
+        amount.className = 'history-amount ' + (op.kind === 'plus' ? 'plus' : 'minus');
+        amount.textContent = (op.kind === 'plus' ? '+ ' : '− ') + formatMoney(op.amount);
+        item.appendChild(icon); item.appendChild(info); item.appendChild(amount);
+        list.appendChild(item);
+    });
+}
+
+document.getElementById('historyFilter').addEventListener('click', () => { historyFilterMode = historyFilterMode === 'selected' ? 'all' : 'selected'; renderHistory(); });
+document.getElementById('savingsList').addEventListener('click', (e) => {
+    const editBtn = e.target.closest('[data-edit]');
+    if (editBtn) { e.stopPropagation(); openSavingsSheet(editBtn.dataset.edit); return; }
+    const item = e.target.closest('.tx-item');
+    if (!item) return;
+    selectedSavingsId = item.dataset.id;
+    renderSavings();
+});
+
+document.getElementById('payEyeBtn').addEventListener('click', () => {
+    payHidden = !payHidden;
+    const icon = document.getElementById('payEyeIcon');
+    if (payHidden) icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+    else icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    renderSavings();
+});
+
+const savingsSheet = document.getElementById('savingsSheet');
+const savingsTitle = document.getElementById('savingsTitle');
+const savingsNameInput = document.getElementById('savingsNameInput');
+const savingsPercentInput = document.getElementById('savingsPercentInput');
+const pctSummaryValue = document.getElementById('pctSummaryValue');
+const savingsDeleteBtn = document.getElementById('savingsDeleteBtn');
+let editingSavingsId = null;
+
+function openSavingsSheet(id) {
+    editingSavingsId = id || null;
+    if (id) {
+        const s = savingsState.savings.find(x => x.id === id);
+        if (!s) return;
+        savingsTitle.textContent = 'Редактировать';
+        savingsNameInput.value = s.name || '';
+        savingsPercentInput.value = s.percent || 0;
+        savingsDeleteBtn.style.display = 'block';
+    } else {
+        if (savingsState.savings.length >= MAX_SAVINGS) { notifyWarn('Лимит', 'Максимум ' + MAX_SAVINGS + ' накоплений'); return; }
+        savingsTitle.textContent = 'Новое накопление';
+        savingsNameInput.value = '';
+        savingsPercentInput.value = 0;
+        savingsDeleteBtn.style.display = 'none';
+    }
+    updatePctSummary();
+    overlay.classList.add('open');
+    savingsSheet.classList.add('open');
+    setTimeout(() => savingsNameInput.focus(), 300);
+}
+
+function updatePctSummary() {
+    const val = parseInt(savingsPercentInput.value) || 0;
+    const total = getTotalPercent(editingSavingsId) + val;
+    pctSummaryValue.textContent = formatPercent(total);
+    pctSummaryValue.classList.remove('ok', 'warn', 'over');
+    if (total > 100) pctSummaryValue.classList.add('over');
+    else if (total === 100) pctSummaryValue.classList.add('ok');
+    else if (total > 80) pctSummaryValue.classList.add('warn');
+    else pctSummaryValue.classList.add('ok');
+}
+
+savingsPercentInput.addEventListener('input', updatePctSummary);
+document.getElementById('createSavingsBtn').addEventListener('click', () => openSavingsSheet(null));
+document.getElementById('heroPlus').addEventListener('click', () => openSavingsSheet(null));
+document.getElementById('savingsCancelBtn').addEventListener('click', closeSheet);
+
+document.getElementById('savingsSaveBtn').addEventListener('click', () => {
+    const name = (savingsNameInput.value || '').trim();
+    const percent = Math.max(0, parseInt(savingsPercentInput.value) || 0);
+    if (!name) { notifyWarn('Ошибка', 'Введи название'); return; }
+    if (percent <= 0) { notifyWarn('Ошибка', 'Процент должен быть больше 0'); return; }
+    if (percent > 100) { notifyWarn('Ошибка', 'Процент не может быть больше 100'); return; }
+    const total = getTotalPercent(editingSavingsId) + percent;
+    if (total > 100) { notifyError('Превышение', 'Сумма процентов не может превышать 100%. Сейчас: ' + formatPercent(total)); return; }
+    if (editingSavingsId) {
+        const s = savingsState.savings.find(x => x.id === editingSavingsId);
+        if (s) { s.name = name; s.percent = percent; }
+    } else {
+        const color = SAVINGS_COLORS[savingsState.savings.length % SAVINGS_COLORS.length];
+        const s = { id: uid(), name, percent, balance: 0, color };
+        savingsState.savings.push(s);
+        if (!selectedSavingsId) selectedSavingsId = s.id;
+    }
+    persistSavings(savingsState);
+    closeSheet();
+    renderSavings();
+    notifySuccess('Сохранено', editingSavingsId ? 'Накопление обновлено' : 'Накопление создано');
+});
+
+document.getElementById('savingsDeleteBtn').addEventListener('click', () => {
+    if (!editingSavingsId) return;
+    confirmDialog('Удалить накопление?', 'Все его операции тоже удалятся.', () => {
+        savingsState.savings = savingsState.savings.filter(x => x.id !== editingSavingsId);
+        savingsState.operations = savingsState.operations.filter(x => x.savingsId !== editingSavingsId);
+        if (selectedSavingsId === editingSavingsId) selectedSavingsId = savingsState.savings.length > 0 ? savingsState.savings[0].id : null;
+        persistSavings(savingsState);
+        closeSheet();
+        renderSavings();
+        notifySuccess('Удалено', 'Накопление удалено');
+    }, { confirmLabel: 'Удалить', confirmVariant: 'danger' });
+});
+
+/* ВНЕСТИ */
+const moneySheet = document.getElementById('moneySheet');
+const moneyAmountInput = document.getElementById('moneyAmountInput');
+const moneyHint = document.getElementById('moneyHint');
+let opType = 'Оклад';
+
+function openMoneySheet() {
+    if (savingsState.savings.length === 0) { notifyWarn('Нет накоплений', 'Сначала создай хотя бы одно накопление'); return; }
+    opType = 'Оклад';
+    document.querySelectorAll('.op-type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === 'Оклад'));
+    moneyAmountInput.value = 0;
+    updateMoneyHint();
+    overlay.classList.add('open');
+    moneySheet.classList.add('open');
+    setTimeout(() => moneyAmountInput.focus(), 300);
+}
+
+function updateMoneyHint() {
+    const amount = Math.max(0, parseFloat(moneyAmountInput.value) || 0);
+    const totalPct = savingsState.savings.reduce((s, x) => s + (x.percent || 0), 0);
+    if (totalPct === 0) { moneyHint.textContent = 'Нет процентов — распределить некуда'; moneyHint.className = 'hint warn'; return; }
+    const distributed = amount * (totalPct / 100);
+    const leftover = amount - distributed;
+    if (totalPct === 100) { moneyHint.textContent = 'Распределится: ' + formatMoney(distributed) + ' · Остаток: 0 ₽'; moneyHint.className = 'hint'; }
+    else { moneyHint.textContent = 'Распределится: ' + formatMoney(distributed) + ' · Нераспределено: ' + formatMoney(leftover); moneyHint.className = 'hint warn'; }
+}
+
+moneyAmountInput.addEventListener('input', updateMoneyHint);
+document.querySelectorAll('.op-type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        opType = btn.dataset.type;
+        document.querySelectorAll('.op-type-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    });
+});
+document.querySelectorAll('[data-money]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const add = parseFloat(btn.dataset.money) || 0;
+        moneyAmountInput.value = (parseFloat(moneyAmountInput.value) || 0) + add;
+        updateMoneyHint();
+    });
+});
+
+document.getElementById('addMoneyBtn').addEventListener('click', openMoneySheet);
+document.getElementById('moneyCancelBtn').addEventListener('click', closeSheet);
+
+document.getElementById('moneySaveBtn').addEventListener('click', () => {
+    const amount = Math.max(0, parseFloat(moneyAmountInput.value) || 0);
+    if (amount <= 0) { notifyWarn('Ошибка', 'Введи сумму больше 0'); return; }
+    const totalPct = savingsState.savings.reduce((s, x) => s + (x.percent || 0), 0);
+    if (totalPct === 0) { notifyWarn('Ошибка', 'Нет накоплений с процентами'); return; }
+    const now = Date.now();
+    savingsState.savings.forEach(s => {
+        const share = amount * (s.percent / 100);
+        if (share > 0) {
+            s.balance = (s.balance || 0) + share;
+            savingsState.operations.push({ id: uid(), savingsId: s.id, type: opType, amount: share, date: now, kind: 'plus' });
+        }
+    });
+    persistSavings(savingsState);
+    closeSheet();
+    renderSavings();
+    notifySuccess('Зачислено', opType + ' распределён по накоплениям');
+});
+
+/* ЗАБРАТЬ */
+const takeSheet = document.getElementById('takeSheet');
+const takeAmountInput = document.getElementById('takeAmountInput');
+const takeHint = document.getElementById('takeHint');
+const takeTitle = document.getElementById('takeTitle');
+const takeSubtitle = document.getElementById('takeSubtitle');
+
+function openTakeSheet() {
+    const s = getSelectedSavings();
+    if (!s) { notifyWarn('Нет накопления', 'Выбери накопление'); return; }
+    takeTitle.textContent = 'Забрать из накопления';
+    takeSubtitle.textContent = s.name + ' · Доступно: ' + formatMoney(s.balance || 0);
+    takeAmountInput.value = 0;
+    updateTakeHint();
+    overlay.classList.add('open');
+    takeSheet.classList.add('open');
+    setTimeout(() => takeAmountInput.focus(), 300);
+}
+
+function updateTakeHint() {
+    const s = getSelectedSavings();
+    if (!s) return;
+    const amount = Math.max(0, parseFloat(takeAmountInput.value) || 0);
+    const balance = s.balance || 0;
+    if (amount > balance) { takeHint.textContent = 'Недостаточно средств. Доступно: ' + formatMoney(balance); takeHint.className = 'hint warn'; }
+    else { takeHint.textContent = 'Останется: ' + formatMoney(balance - amount); takeHint.className = 'hint'; }
+}
+
+takeAmountInput.addEventListener('input', updateTakeHint);
+document.querySelectorAll('[data-take]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const s = getSelectedSavings();
+        if (!s) return;
+        const val = btn.dataset.take;
+        if (val === 'all') takeAmountInput.value = s.balance || 0;
+        else takeAmountInput.value = (parseFloat(takeAmountInput.value) || 0) + (parseFloat(val) || 0);
+        updateTakeHint();
+    });
+});
+
+document.getElementById('heroMinus').addEventListener('click', openTakeSheet);
+document.getElementById('takeCancelBtn').addEventListener('click', closeSheet);
+
+document.getElementById('takeSaveBtn').addEventListener('click', () => {
+    const s = getSelectedSavings();
+    if (!s) return;
+    const amount = Math.max(0, parseFloat(takeAmountInput.value) || 0);
+    if (amount <= 0) { notifyWarn('Ошибка', 'Введи сумму больше 0'); return; }
+    if (amount > (s.balance || 0)) { notifyError('Недостаточно', 'На балансе меньше денег'); return; }
+    s.balance = (s.balance || 0) - amount;
+    savingsState.operations.push({ id: uid(), savingsId: s.id, type: 'Снятие', amount: amount, date: Date.now(), kind: 'minus' });
+    persistSavings(savingsState);
+    closeSheet();
+    renderSavings();
+    notifySuccess('Списано', formatMoney(amount) + ' из «' + s.name + '»');
+});
+
+/* =========================================================
+   ОЧИСТКА ВСЕГО
+   ========================================================= */
+document.getElementById('clearAllBtn').addEventListener('click', () => {
+    const totalSavings = savingsState.savings.length;
+    const totalOps = savingsState.operations.length;
+
+    if (totalSavings === 0 && totalOps === 0) {
+        notifyWarn('Нечего удалять', 'Накоплений и истории нет');
+        return;
+    }
+
+    confirmDialog(
+        'Удалить всё?',
+        'Все накопления, балансы и история будут безвозвратно удалены. Это действие нельзя отменить.',
+        () => {
+            savingsState.savings = [];
+            savingsState.operations = [];
+            selectedSavingsId = null;
+            historyFilterMode = 'selected';
+            persistSavings(savingsState);
+            renderSavings();
+            notifySuccess('Очищено', 'Все накопления и история удалены');
+        },
+        { confirmLabel: 'Удалить всё', confirmVariant: 'danger' }
+    );
+});
+
+overlay.addEventListener('click', closeSheet);
+
+/* =========================================================
+   СТАРТ
+   ========================================================= */
+console.log('[job] init', { savings: savingsState.savings.length, operations: savingsState.operations.length, selected: selectedSavingsId });
+renderHome();
+renderSavings();
+if (selectedSavingsId && !savingsState.savings.find(s => s.id === selectedSavingsId)) {
+    selectedSavingsId = savingsState.savings.length > 0 ? savingsState.savings[0].id : null;
+}
+window.addEventListener('error', (e) => { console.error('[job] Global error:', e.message); });
+</script>
+
+</body>
+</html>
