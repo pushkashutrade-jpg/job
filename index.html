@@ -108,6 +108,15 @@ body {
 .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; min-height: 28px; }
 .cal-title-wrap { flex: 1; padding: 0 8px; }
 .cal-month { font-size: 13px; font-weight: 500; color: #8e8e93; margin-top: 2px; }
+.cal-avg {
+    font-size: 11px;
+    font-weight: 500;
+    color: #8e8e93;
+    margin-top: 4px;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+}
+.calendar-wrapper.expanded .cal-avg { display: none; }
 .week-title { font-size: 16px; font-weight: 600; color: #ffffff; cursor: pointer; }
 .cal-nav { width: 28px; height: 28px; border-radius: 50%; background: #2c2c2e; display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; flex-shrink: 0; }
 .cal-nav svg { width: 16px; height: 16px; stroke: #ffffff; stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
@@ -136,6 +145,7 @@ body {
 .day-dot.gray   { background-color: #2c2c2e; color: #8e8e93; }
 .day-dot.weekend { background-color: #1a1a1c; color: #48484a; }
 .day-dot.today-ring { box-shadow: 0 0 0 2px #ffffff inset; }
+.day-dot.today-ring.weekend { box-shadow: 0 0 0 2px #2e8eff inset; }
 .day-dot.selected { box-shadow: 0 0 0 2px #2e8eff inset; }
 .day-dot.other-month { opacity: 0.35; }
 .day-label { font-size: 13px; font-weight: 600; color: #8e8e93; line-height: 1; }
@@ -310,7 +320,6 @@ body {
 .hint { font-size: 12px; font-weight: 500; color: #8e8e93; padding: 0 4px 8px 4px; line-height: 1.4; }
 .hint.warn { color: #ff9500; }
 
-/* Кнопка очистки */
 .clear-all-btn {
     width: 100%;
     background: transparent;
@@ -326,9 +335,7 @@ body {
     user-select: none;
     margin-bottom: 16px;
 }
-.clear-all-btn:active {
-    background: rgba(255, 69, 58, 0.1);
-}
+.clear-all-btn:active { background: rgba(255, 69, 58, 0.1); }
 </style>
 </head>
 <body>
@@ -350,7 +357,7 @@ body {
                 <div class="main-stat-header">
                     <div class="main-stat-left">
                         <div class="main-stat-number" id="todayLines">0</div>
-                        <div class="main-stat-label">Строк<span>сегодня</span></div>
+                        <div class="main-stat-label">Строк<span id="mainDayLabel">сегодня</span></div>
                     </div>
                     <div class="main-stat-right">
                         <div class="num" id="todayMachines">0</div>
@@ -380,6 +387,7 @@ body {
                     <div class="cal-title-wrap">
                         <div class="week-title" id="calTitle">Неделя</div>
                         <div class="cal-month" id="calMonth">&nbsp;</div>
+                        <div class="cal-avg" id="calAvg">—</div>
                     </div>
                     <div class="cal-nav" id="calNext" style="display:none;"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
                     <div class="week-badge" id="calBadge">
@@ -416,7 +424,7 @@ body {
                     <div class="card-value" id="dayIncome">—</div>
                 </div>
                 <div class="summary-card blue">
-                    <div class="card-label">Премия</div>
+                    <div class="card-label">Премия за день</div>
                     <div class="card-value" id="bonus">0 ₽</div>
                 </div>
                 <div class="summary-card dark wide">
@@ -462,10 +470,7 @@ body {
 
             <div class="history-list" id="historyList"></div>
 
-            <!-- Кнопка очистки -->
-            <button class="clear-all-btn" id="clearAllBtn">
-                Очистить все данные
-            </button>
+            <button class="clear-all-btn" id="clearAllBtn">Очистить все данные</button>
         </div>
     </div>
 
@@ -713,7 +718,9 @@ function GOAL_LINES()      { return settings.goalLines; }
 function GOAL_MACHINES()   { return settings.goalMachines; }
 
 const MONTHS_RU = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const MONTHS_RU_SHORT = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
 const DAYS_RU = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const DAYS_RU_SHORT = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
 
 /* =========================================================
    ДАННЫЕ
@@ -744,6 +751,9 @@ let savingsState = loadSavings();
 let selectedSavingsId = savingsState.savings.length > 0 ? savingsState.savings[0].id : null;
 let historyFilterMode = 'selected';
 let payHidden = false;
+
+/* Текущий выбранный день для отображения на главной */
+let viewDateKey = getTodayKey();
 
 const SAVINGS_COLORS = ['c1','c2','c3','c4','c5','c6','c7','c8','c9','c10'];
 const MAX_SAVINGS = 10;
@@ -811,18 +821,45 @@ function progressClass(percent) {
 
 function renderHome() {
     const data = loadData();
+    const view = data[viewDateKey] || { lines: 0, machines: 0, worked: false };
+    const viewDate = parseKey(viewDateKey);
     const todayKey = getTodayKey();
-    const today = data[todayKey] || { lines: 0, machines: 0, worked: false };
-    document.getElementById('todayLines').textContent = Number(today.lines) || 0;
-    document.getElementById('todayMachines').textContent = Number(today.machines) || 0;
+    const isToday = viewDateKey === todayKey;
+    const isViewWeekend = isWeekend(viewDate);
+
+    // Верхняя карточка
+    document.getElementById('todayLines').textContent = Number(view.lines) || 0;
+    document.getElementById('todayMachines').textContent = Number(view.machines) || 0;
+
+    // Подпись «сегодня» / дата
+    const mainDayLabel = document.getElementById('mainDayLabel');
+    if (isToday) {
+        mainDayLabel.textContent = 'сегодня';
+    } else {
+        mainDayLabel.textContent = DAYS_RU_SHORT[viewDate.getDay()] + ', ' + viewDate.getDate() + ' ' + MONTHS_RU_SHORT[viewDate.getMonth()];
+    }
+
     renderGoals();
     renderWeek(data);
+
+    // Доход за день
     const dayIncomeEl = document.getElementById('dayIncome');
-    const now = new Date();
-    if (isWeekend(now) || !today.worked) dayIncomeEl.textContent = '—';
-    else dayIncomeEl.textContent = formatMoney(calcDayIncome(today));
+    if (isViewWeekend || !view.worked) {
+        dayIncomeEl.textContent = '—';
+    } else {
+        dayIncomeEl.textContent = formatMoney(calcDayIncome(view));
+    }
+
+    // Премия за день
+    const bonusEl = document.getElementById('bonus');
+    if (isViewWeekend || !view.worked) {
+        bonusEl.textContent = '—';
+    } else {
+        bonusEl.textContent = formatMoney(calcDayBonus(view.lines || 0, view.machines || 0));
+    }
+
+    // Зарплата за месяц
     const month = calcMonthStats();
-    document.getElementById('bonus').textContent = formatMoney(month.bonusNet);
     document.getElementById('salary').textContent = formatMoney(month.total);
 }
 
@@ -857,6 +894,7 @@ let selectedDayKey = null;
 const calendarWrapper = document.getElementById('calendarWrapper');
 const calTitle = document.getElementById('calTitle');
 const calMonth = document.getElementById('calMonth');
+const calAvg = document.getElementById('calAvg');
 const calPrev = document.getElementById('calPrev');
 const calNext = document.getElementById('calNext');
 const calBadge = document.getElementById('calBadge');
@@ -884,6 +922,8 @@ function renderWeek(data) {
 
     weekDaysEl.innerHTML = '';
     let weekNorm = 0;
+    let totalLinesWeek = 0;
+    let workedDaysWeek = 0;
 
     for (let i = 0; i < 7; i++) {
         const d = new Date(monday);
@@ -893,6 +933,7 @@ function renderWeek(data) {
         const weekend = isWeekend(d);
         const status = weekend ? 'weekend' : getDayStatus(entry);
         const isToday = key === todayKey;
+        const isViewSelected = key === viewDateKey;
 
         const item = document.createElement('div');
         item.className = 'day-item';
@@ -901,11 +942,12 @@ function renderWeek(data) {
 
         const dot = document.createElement('div');
         dot.className = 'day-dot ' + status;
-        if (isToday && !weekend) dot.classList.add('today-ring');
+        if (isToday) dot.classList.add('today-ring');
+        if (isViewSelected) dot.classList.add('selected');
         dot.textContent = d.getDate();
 
         const label = document.createElement('div');
-        label.className = 'day-label' + ((isToday && !weekend) ? ' active' : '');
+        label.className = 'day-label' + (isToday ? ' active' : '');
         label.textContent = DAYS_RU[i];
 
         item.appendChild(dot);
@@ -913,8 +955,20 @@ function renderWeek(data) {
         weekDaysEl.appendChild(item);
 
         if (entry.worked && (Number(entry.lines) || 0) >= NORM_LINES() && (Number(entry.machines) || 0) >= NORM_MACHINES()) weekNorm++;
+        if (entry.worked) {
+            totalLinesWeek += Number(entry.lines) || 0;
+            workedDaysWeek++;
+        }
     }
     document.getElementById('weekNorm').textContent = weekNorm;
+
+    // Среднее за неделю
+    if (workedDaysWeek > 0) {
+        const avg = Math.round(totalLinesWeek / workedDaysWeek);
+        calAvg.textContent = avg.toLocaleString('ru-RU') + ' в среднем';
+    } else {
+        calAvg.textContent = '—';
+    }
 }
 
 function renderMonth(date) {
@@ -940,7 +994,7 @@ function renderMonth(date) {
         const weekend = isWeekend(dayDate);
         const status = weekend ? 'weekend' : getDayStatus(entry);
         const isToday = key === todayKey;
-        const isSelected = key === selectedDayKey;
+        const isSelected = key === selectedDayKey || key === viewDateKey;
         const item = document.createElement('div');
         item.className = 'day-item';
         item.dataset.date = key;
@@ -948,7 +1002,7 @@ function renderMonth(date) {
         const dot = document.createElement('div');
         dot.className = 'day-dot ' + status;
         if (isOtherMonth) dot.classList.add('other-month');
-        if (isToday && !weekend) dot.classList.add('today-ring');
+        if (isToday) dot.classList.add('today-ring');
         if (isSelected) dot.classList.add('selected');
         dot.textContent = dayDate.getDate();
         item.appendChild(dot);
@@ -999,12 +1053,15 @@ weekDaysEl.addEventListener('click', (e) => {
 });
 
 function showDayDetails(key) {
+    // Ставим выбранный день на главную
+    viewDateKey = key;
+    renderHome();
+
     const data = loadData();
     const entry = data[key] || { lines: 0, machines: 0, worked: false };
     const date = parseKey(key);
-    const dayNames = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
     const weekend = isWeekend(date);
-    document.getElementById('dayDetailsTitle').textContent = dayNames[date.getDay()] + ', ' + date.getDate() + ' ' + MONTHS_RU[date.getMonth()];
+    document.getElementById('dayDetailsTitle').textContent = DAYS_RU_SHORT[date.getDay()] + ', ' + date.getDate() + ' ' + MONTHS_RU[date.getMonth()];
     document.getElementById('ddLines').textContent = Number(entry.lines) || 0;
     document.getElementById('ddMachines').textContent = Number(entry.machines) || 0;
     if (!entry.worked || weekend) {
@@ -1029,10 +1086,45 @@ function showDayDetails(key) {
     document.getElementById('dayDetails').style.display = 'block';
 }
 
-document.getElementById('dayDetailsClose').addEventListener('click', () => { document.getElementById('dayDetails').style.display = 'none'; selectedDayKey = null; if (calendarWrapper.classList.contains('expanded')) renderMonth(currentMonth); else renderWeek(loadData()); });
-document.getElementById('ddWorkYes').addEventListener('click', () => { if (!selectedDayKey) return; const d = parseKey(selectedDayKey); if (isWeekend(d)) return; const data = loadData(); const e = data[selectedDayKey] || { lines: 0, machines: 0 }; e.worked = true; data[selectedDayKey] = e; saveData(data); showDayDetails(selectedDayKey); renderHome(); });
-document.getElementById('ddWorkNo').addEventListener('click', () => { if (!selectedDayKey) return; const d = parseKey(selectedDayKey); if (isWeekend(d)) return; const data = loadData(); const e = data[selectedDayKey] || { lines: 0, machines: 0 }; e.worked = false; data[selectedDayKey] = e; saveData(data); showDayDetails(selectedDayKey); renderHome(); });
-document.getElementById('ddAdd').addEventListener('click', () => { if (!selectedDayKey) return; const d = parseKey(selectedDayKey); if (isWeekend(d)) return; openSheetFor(selectedDayKey); });
+document.getElementById('dayDetailsClose').addEventListener('click', () => {
+    document.getElementById('dayDetails').style.display = 'none';
+    selectedDayKey = null;
+    if (calendarWrapper.classList.contains('expanded')) renderMonth(currentMonth);
+    else renderWeek(loadData());
+});
+
+document.getElementById('ddWorkYes').addEventListener('click', () => {
+    if (!selectedDayKey) return;
+    const d = parseKey(selectedDayKey);
+    if (isWeekend(d)) return;
+    const data = loadData();
+    const e = data[selectedDayKey] || { lines: 0, machines: 0 };
+    e.worked = true;
+    data[selectedDayKey] = e;
+    saveData(data);
+    viewDateKey = selectedDayKey;
+    showDayDetails(selectedDayKey);
+    renderHome();
+});
+document.getElementById('ddWorkNo').addEventListener('click', () => {
+    if (!selectedDayKey) return;
+    const d = parseKey(selectedDayKey);
+    if (isWeekend(d)) return;
+    const data = loadData();
+    const e = data[selectedDayKey] || { lines: 0, machines: 0 };
+    e.worked = false;
+    data[selectedDayKey] = e;
+    saveData(data);
+    viewDateKey = selectedDayKey;
+    showDayDetails(selectedDayKey);
+    renderHome();
+});
+document.getElementById('ddAdd').addEventListener('click', () => {
+    if (!selectedDayKey) return;
+    const d = parseKey(selectedDayKey);
+    if (isWeekend(d)) return;
+    openSheetFor(selectedDayKey);
+});
 
 /* =========================================================
    BOTTOM SHEET — ВВОД
@@ -1053,15 +1145,27 @@ function openSheetFor(key) {
     const entry = data[key] || { lines: 0, machines: 0 };
     inputLines.value = Number(entry.lines) || 0;
     inputMachines.value = Number(entry.machines) || 0;
-    const dayNames = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
-    sheetTitle.textContent = dayNames[d.getDay()] + ', ' + d.getDate() + ' ' + MONTHS_RU[d.getMonth()];
+    sheetTitle.textContent = DAYS_RU_SHORT[d.getDay()] + ', ' + d.getDate() + ' ' + MONTHS_RU[d.getMonth()];
     sheetDate.textContent = d.getFullYear();
     overlay.classList.add('open');
     sheet.classList.add('open');
 }
 
-function openSheetToday() { const now = new Date(); if (isWeekend(now)) { notifyWarn('Выходной', 'Сегодня выходной — ввод недоступен'); return; } openSheetFor(getTodayKey()); }
-function closeSheet() { overlay.classList.remove('open'); sheet.classList.remove('open'); goalSheet.classList.remove('open'); savingsSheet.classList.remove('open'); moneySheet.classList.remove('open'); takeSheet.classList.remove('open'); }
+function openSheetToday() {
+    const now = new Date();
+    if (isWeekend(now)) { notifyWarn('Выходной', 'Сегодня выходной — ввод недоступен'); return; }
+    openSheetFor(getTodayKey());
+}
+
+function closeSheet() {
+    overlay.classList.remove('open');
+    sheet.classList.remove('open');
+    goalSheet.classList.remove('open');
+    savingsSheet.classList.remove('open');
+    moneySheet.classList.remove('open');
+    takeSheet.classList.remove('open');
+}
+
 function saveSheet() {
     if (!sheetTargetKey) return;
     const d = parseKey(sheetTargetKey);
@@ -1072,6 +1176,8 @@ function saveSheet() {
     const existing = data[sheetTargetKey] || {};
     data[sheetTargetKey] = { lines, machines, worked: existing.worked === false ? false : true };
     saveData(data);
+    // Если вводили для выбранного дня — обновляем главную
+    viewDateKey = sheetTargetKey;
     closeSheet();
     renderHome();
     if (selectedDayKey) showDayDetails(selectedDayKey);
@@ -1135,7 +1241,47 @@ bottomNav.addEventListener('click', (e) => {
     Object.keys(screens).forEach(k => screens[k].classList.remove('active'));
     screens[key].classList.add('active');
     if (key === 'pay') renderSavings();
+    if (key === 'home') renderHome();
 });
+
+/* =========================================================
+   CONFIRM (для «Доход за день»)
+   ========================================================= */
+const confirmSheet = document.getElementById('confirmSheet');
+const confirmDate = document.getElementById('confirmDate');
+
+function openConfirm() {
+    const date = parseKey(viewDateKey);
+    if (isWeekend(date)) return;
+    confirmDate.textContent = date.getDate() + ' ' + MONTHS_RU[date.getMonth()] + ' ' + date.getFullYear();
+    overlay.classList.add('open');
+    confirmSheet.classList.add('open');
+}
+function closeConfirm() {
+    overlay.classList.remove('open');
+    confirmSheet.classList.remove('open');
+}
+
+document.getElementById('dayIncomeCard').addEventListener('click', openConfirm);
+document.getElementById('confirmYes').addEventListener('click', () => {
+    const data = loadData();
+    const key = viewDateKey;
+    const existing = data[key] || { lines: 0, machines: 0 };
+    data[key] = { ...existing, worked: true };
+    saveData(data);
+    closeConfirm();
+    renderHome();
+});
+document.getElementById('confirmNo').addEventListener('click', () => {
+    const data = loadData();
+    const key = viewDateKey;
+    const existing = data[key] || { lines: 0, machines: 0 };
+    data[key] = { ...existing, worked: false };
+    saveData(data);
+    closeConfirm();
+    renderHome();
+});
+document.getElementById('confirmCancel').addEventListener('click', closeConfirm);
 
 /* =========================================================
    НАКОПЛЕНИЯ
@@ -1455,40 +1601,26 @@ document.getElementById('takeSaveBtn').addEventListener('click', () => {
     notifySuccess('Списано', formatMoney(amount) + ' из «' + s.name + '»');
 });
 
-/* =========================================================
-   ОЧИСТКА ВСЕГО
-   ========================================================= */
+/* ОЧИСТКА */
 document.getElementById('clearAllBtn').addEventListener('click', () => {
     const totalSavings = savingsState.savings.length;
     const totalOps = savingsState.operations.length;
-
-    if (totalSavings === 0 && totalOps === 0) {
-        notifyWarn('Нечего удалять', 'Накоплений и истории нет');
-        return;
-    }
-
-    confirmDialog(
-        'Удалить всё?',
-        'Все накопления, балансы и история будут безвозвратно удалены. Это действие нельзя отменить.',
-        () => {
-            savingsState.savings = [];
-            savingsState.operations = [];
-            selectedSavingsId = null;
-            historyFilterMode = 'selected';
-            persistSavings(savingsState);
-            renderSavings();
-            notifySuccess('Очищено', 'Все накопления и история удалены');
-        },
-        { confirmLabel: 'Удалить всё', confirmVariant: 'danger' }
-    );
+    if (totalSavings === 0 && totalOps === 0) { notifyWarn('Нечего удалять', 'Накоплений и истории нет'); return; }
+    confirmDialog('Удалить всё?', 'Все накопления, балансы и история будут безвозвратно удалены. Это действие нельзя отменить.', () => {
+        savingsState.savings = [];
+        savingsState.operations = [];
+        selectedSavingsId = null;
+        historyFilterMode = 'selected';
+        persistSavings(savingsState);
+        renderSavings();
+        notifySuccess('Очищено', 'Все накопления и история удалены');
+    }, { confirmLabel: 'Удалить всё', confirmVariant: 'danger' });
 });
 
 overlay.addEventListener('click', closeSheet);
 
-/* =========================================================
-   СТАРТ
-   ========================================================= */
-console.log('[job] init', { savings: savingsState.savings.length, operations: savingsState.operations.length, selected: selectedSavingsId });
+/* СТАРТ */
+console.log('[job] init', { savings: savingsState.savings.length, operations: savingsState.operations.length, selected: selectedSavingsId, viewDate: viewDateKey });
 renderHome();
 renderSavings();
 if (selectedSavingsId && !savingsState.savings.find(s => s.id === selectedSavingsId)) {
