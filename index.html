@@ -108,7 +108,7 @@ body {
 }
 .calendar-header {
     display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 16px; min-height: 28px;
+    margin-bottom: 16px; min-height: 44px;
 }
 .cal-title-wrap { flex: 1; padding: 0 8px; min-width: 0; }
 .week-title { font-size: 16px; font-weight: 600; color: #ffffff; cursor: pointer; }
@@ -116,12 +116,39 @@ body {
     font-size: 13px; font-weight: 500; color: #8e8e93;
     margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.cal-avg {
-    font-size: 11px; font-weight: 500; color: #8e8e93;
-    margin-top: 4px; line-height: 1.2;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+
+.cal-avg-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+    flex-shrink: 0;
+    min-width: 62px;
 }
+.cal-avg {
+    font-size: 11px;
+    font-weight: 600;
+    color: #8e8e93;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+}
+.cal-avg b {
+    display: block;
+    font-size: 18px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.5px;
+    margin-bottom: 1px;
+}
+.cal-avg span {
+    display: block;
+    font-size: 10px;
+    color: #8e8e93;
+    font-weight: 600;
+}
+
 .cal-nav {
     width: 28px; height: 28px; border-radius: 50%;
     background: #2c2c2e;
@@ -411,6 +438,8 @@ body {
                     <div class="cal-title-wrap">
                         <div class="week-title" id="calTitle">Неделя</div>
                         <div class="cal-month" id="calMonth"></div>
+                    </div>
+                    <div class="cal-avg-wrap">
                         <div class="cal-avg" id="calAvg"></div>
                     </div>
                     <div class="cal-nav" id="calNext" style="display:none;"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
@@ -446,7 +475,7 @@ body {
                     <div class="card-value" id="dayIncome">—</div>
                 </div>
                 <div class="summary-card blue">
-                    <div class="card-label">Премия за день</div>
+                    <div class="card-label">Премия за месяц</div>
                     <div class="card-value" id="bonus">0 ₽</div>
                 </div>
                 <div class="summary-card dark wide">
@@ -657,9 +686,6 @@ body {
 <script>
 'use strict';
 
-/* =========================================================
-   ХЕЛПЕРЫ
-   ========================================================= */
 function $(id) { return document.getElementById(id); }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function formatMoney(v) { const n = Number(v); if (!isFinite(n)) return '0 ₽'; return Math.round(n).toLocaleString('ru-RU') + ' ₽'; }
@@ -667,9 +693,7 @@ function formatPercent(v) { const n = Number(v); if (!isFinite(n)) return '0%'; 
 function safeGet(key, fallback) { try { const raw = localStorage.getItem(key); if (raw === null) return fallback; return JSON.parse(raw); } catch(e) { return fallback; } }
 function safeSet(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch(e) {} }
 
-/* =========================================================
-   TOAST
-   ========================================================= */
+/* TOAST */
 function hideToast() {
     const o = $('toastOverlay'); if (o) o.classList.remove('open');
     const a = $('toastActions'); if (a) a.innerHTML = '';
@@ -724,9 +748,7 @@ function confirmDialog(title, message, onConfirm, opts = {}) {
     });
 }
 
-/* =========================================================
-   НАСТРОЙКИ
-   ========================================================= */
+/* НАСТРОЙКИ */
 const DEFAULT_SETTINGS = { salary: 60000, normLines: 350, normMachines: 1, linePrice: 5, machineBonus: 500, tax: 0.13, goalLines: 7000, goalMachines: 44 };
 const STORAGE_KEY = 'pushkashuu';
 const SETTINGS_KEY = 'pushkashuu_settings';
@@ -752,9 +774,7 @@ const MONTHS_RU_SHORT = ['янв','фев','мар','апр','мая','июн','
 const DAYS_RU = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
 const DAYS_RU_SHORT = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
 
-/* =========================================================
-   ДАННЫЕ
-   ========================================================= */
+/* ДАННЫЕ */
 function loadData() { const d = safeGet(STORAGE_KEY, {}); return (d && typeof d === 'object' && !Array.isArray(d)) ? d : {}; }
 function saveData(data) { safeSet(STORAGE_KEY, data); }
 function dateKey(d) { const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); return y + '-' + m + '-' + day; }
@@ -762,9 +782,7 @@ function getTodayKey() { return dateKey(new Date()); }
 function isWeekend(d) { const g = d.getDay(); return g === 0 || g === 6; }
 function parseKey(key) { try { const p = String(key).split('-').map(Number); if (p.length !== 3 || p.some(n => !isFinite(n))) return new Date(); return new Date(p[0], p[1] - 1, p[2]); } catch(e) { return new Date(); } }
 
-/* =========================================================
-   НАКОПЛЕНИЯ
-   ========================================================= */
+/* НАКОПЛЕНИЯ */
 function loadSavings() {
     const raw = safeGet(SAVINGS_KEY, null);
     if (!raw || typeof raw !== 'object') return { savings: [], operations: [] };
@@ -788,9 +806,7 @@ const MAX_SAVINGS = 10;
 function getTotalPercent(excludeId) { return savingsState.savings.filter(s => s.id !== excludeId).reduce((sum, s) => sum + (Number(s.percent) || 0), 0); }
 function getSelectedSavings() { if (!selectedSavingsId) return null; return savingsState.savings.find(s => s.id === selectedSavingsId) || null; }
 
-/* =========================================================
-   РАСЧЁТЫ
-   ========================================================= */
+/* РАСЧЁТЫ */
 function getDayStatus(entry) {
     if (!entry || !entry.worked) return 'gray';
     const lines = Number(entry.lines) || 0;
@@ -817,11 +833,9 @@ function calcDayBonus(lines, machines) {
 
 function calcDayIncome(entry) { if (!entry || !entry.worked) return 0; return SALARY_PER_DAY() + calcDayBonus(entry.lines || 0, entry.machines || 0); }
 
-function calcMonthStats() {
+/* Статистика за конкретный месяц (год, месяц) */
+function calcMonthStatsForYearMonth(y, m) {
     const data = loadData();
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth();
     let totalLines = 0, totalMachines = 0, workDays = 0, salarySum = 0, bonusSum = 0;
     Object.keys(data).forEach(key => {
         const p = String(key).split('-').map(Number);
@@ -839,6 +853,12 @@ function calcMonthStats() {
     return { totalLines, totalMachines, workDays, salaryNet: salarySum, bonusNet: bonusSum, total: salarySum + bonusSum };
 }
 
+/* Статистика за текущий месяц (для главной) */
+function calcMonthStats() {
+    const now = new Date();
+    return calcMonthStatsForYearMonth(now.getFullYear(), now.getMonth());
+}
+
 function progressClass(percent) {
     if (percent <= 20) return 'red';
     if (percent <= 50) return 'orange';
@@ -846,9 +866,7 @@ function progressClass(percent) {
     return 'green';
 }
 
-/* =========================================================
-   РЕНДЕР — ГЛАВНАЯ
-   ========================================================= */
+/* РЕНДЕР — ГЛАВНАЯ */
 function renderHome() {
     try {
         const data = loadData();
@@ -868,16 +886,21 @@ function renderHome() {
         try { renderGoals(); } catch(e) { console.warn('renderGoals fail', e); }
         try { renderWeek(data); } catch(e) { console.warn('renderWeek fail', e); }
 
+        /* Доход за выбранный день */
         const di = $('dayIncome');
         if (di) {
             if (isViewWeekend || !view.worked) di.textContent = '—';
             else di.textContent = formatMoney(calcDayIncome(view));
         }
+
+        /* Премия — ЗА МЕСЯЦ */
         const b = $('bonus');
         if (b) {
-            if (isViewWeekend || !view.worked) b.textContent = '—';
-            else b.textContent = formatMoney(calcDayBonus(view.lines || 0, view.machines || 0));
+            const month = calcMonthStats();
+            b.textContent = formatMoney(month.bonusNet);
         }
+
+        /* Зарплата за месяц */
         const s = $('salary');
         if (s) {
             const month = calcMonthStats();
@@ -905,9 +928,7 @@ function renderGoals() {
     const el8 = $('monthMachinesPercent'); if (el8) el8.textContent = machinesPercent + '% от цели';
 }
 
-/* =========================================================
-   КАЛЕНДАРЬ
-   ========================================================= */
+/* КАЛЕНДАРЬ */
 let weekOffset = 0;
 let currentMonth = new Date();
 let selectedDayKey = null;
@@ -999,7 +1020,13 @@ function renderWeek(data) {
 
     const avg = calcWeekAverage(data, monday);
     const ca = $('calAvg');
-    if (ca) ca.textContent = avg !== null ? (avg.toLocaleString('ru-RU') + ' в среднем за неделю') : '—';
+    if (ca) {
+        if (avg !== null) {
+            ca.innerHTML = '<b>' + avg.toLocaleString('ru-RU') + '</b><span>в среднем</span>';
+        } else {
+            ca.innerHTML = '<b>—</b><span>в среднем</span>';
+        }
+    }
 }
 
 function renderMonth(date) {
@@ -1046,7 +1073,13 @@ function renderMonth(date) {
 
     const avg = calcMonthAverage(data, y, m);
     const ca = $('calAvg');
-    if (ca) ca.textContent = avg !== null ? (avg.toLocaleString('ru-RU') + ' в среднем за месяц') : '—';
+    if (ca) {
+        if (avg !== null) {
+            ca.innerHTML = '<b>' + avg.toLocaleString('ru-RU') + '</b><span>в среднем</span>';
+        } else {
+            ca.innerHTML = '<b>—</b><span>в среднем</span>';
+        }
+    }
 }
 
 function expandCalendar() {
@@ -1065,9 +1098,7 @@ function collapseCalendar() {
     renderWeek(loadData());
 }
 
-/* =========================================================
-   СВАЙП — iOS-стиль (плавный, с инерцией)
-   ========================================================= */
+/* СВАЙП — iOS-стиль */
 (function setupSwipe() {
     const wd = $('weekDays');
     const wdContainer = $('weekDaysContainer');
@@ -1075,7 +1106,6 @@ function collapseCalendar() {
 
     let startX = 0, startY = 0, startTime = 0;
     let isDragging = false;
-    let currentTranslate = 0;
 
     wdContainer.addEventListener('touchstart', (e) => {
         const t = e.touches[0];
@@ -1083,7 +1113,6 @@ function collapseCalendar() {
         startY = t.clientY;
         startTime = Date.now();
         isDragging = true;
-        currentTranslate = 0;
         wd.classList.remove('animating');
         wd.style.transition = 'none';
     }, { passive: true });
@@ -1094,8 +1123,6 @@ function collapseCalendar() {
         const dx = t.clientX - startX;
         const dy = t.clientY - startY;
         if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 5) {
-            // сдвигаем визуально
-            currentTranslate = dx;
             wd.style.transform = 'translateX(' + dx + 'px)';
             wd.style.opacity = Math.max(0.3, 1 - Math.abs(dx) / 300);
         }
@@ -1117,13 +1144,11 @@ function collapseCalendar() {
         if (threshold && Math.abs(dx) > Math.abs(dy)) {
             const direction = dx < 0 ? 'left' : 'right';
 
-            // Плавный сдвиг в сторону
             wd.classList.add('animating');
             wd.style.transition = '';
             wd.style.transform = 'translateX(' + (direction === 'left' ? -100 : 100) + 'px)';
             wd.style.opacity = '0';
 
-            // После сдвига — перерисовка
             setTimeout(() => {
                 if (isExpanded) {
                     if (direction === 'left') currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
@@ -1135,7 +1160,6 @@ function collapseCalendar() {
                     renderWeek(loadData());
                 }
 
-                // Появление с другой стороны
                 wd.style.transition = 'none';
                 wd.style.transform = 'translateX(' + (direction === 'left' ? 60 : -60) + 'px)';
                 wd.style.opacity = '0';
@@ -1155,7 +1179,6 @@ function collapseCalendar() {
                 }, 350);
             }, 200);
         } else {
-            // Возврат на место
             wd.classList.add('animating');
             wd.style.transition = '';
             wd.style.transform = 'translateX(0)';
@@ -1168,7 +1191,6 @@ function collapseCalendar() {
         }
     }, { passive: true });
 
-    // Клик по дню
     wd.addEventListener('click', (e) => {
         const item = e.target.closest('.day-item');
         if (!item) return;
@@ -1191,9 +1213,7 @@ function collapseCalendar() {
     });
 })();
 
-/* =========================================================
-   ДЕТАЛИ ДНЯ
-   ========================================================= */
+/* ДЕТАЛИ ДНЯ */
 function showDayDetails(key) {
     viewDateKey = key;
     renderHome();
@@ -1237,9 +1257,7 @@ function showDayDetails(key) {
     const dd = $('dayDetails'); if (dd) dd.style.display = 'block';
 }
 
-/* =========================================================
-   BOTTOM SHEET
-   ========================================================= */
+/* BOTTOM SHEET */
 let sheetTargetKey = null;
 
 function openSheetFor(key) {
@@ -1276,8 +1294,10 @@ function saveSheet() {
     if (!sheetTargetKey) return;
     const d = parseKey(sheetTargetKey);
     if (isWeekend(d)) return;
-    const lines = Math.max(0, parseInt(($('inputLines') || {}).value) || 0);
-    const machines = Math.max(0, parseInt(($('inputMachines') || {}).value) || 0);
+    const il = $('inputLines');
+    const im = $('inputMachines');
+    const lines = Math.max(0, parseInt(il ? il.value : 0) || 0);
+    const machines = Math.max(0, parseInt(im ? im.value : 0) || 0);
     const data = loadData();
     const existing = data[sheetTargetKey] || {};
     data[sheetTargetKey] = { lines: lines, machines: machines, worked: existing.worked === false ? false : true };
@@ -1288,9 +1308,7 @@ function saveSheet() {
     if (selectedDayKey) showDayDetails(selectedDayKey);
 }
 
-/* =========================================================
-   ЦЕЛЬ
-   ========================================================= */
+/* ЦЕЛЬ */
 let goalTarget = null;
 
 function openGoalSheet(type) {
@@ -1310,9 +1328,7 @@ function openGoalSheet(type) {
     const g = $('goalSheet'); if (g) g.classList.add('open');
 }
 
-/* =========================================================
-   НАКОПЛЕНИЯ — РЕНДЕР
-   ========================================================= */
+/* НАКОПЛЕНИЯ — РЕНДЕР */
 function renderSavings() {
     try {
         const selected = getSelectedSavings();
@@ -1409,9 +1425,7 @@ function renderHistory() {
     });
 }
 
-/* =========================================================
-   НАКОПЛЕНИЯ — SHEET
-   ========================================================= */
+/* НАКОПЛЕНИЯ — SHEET */
 let editingSavingsId = null;
 
 function openSavingsSheet(id) {
@@ -1453,9 +1467,7 @@ function updatePctSummary() {
     else pv.classList.add('ok');
 }
 
-/* =========================================================
-   ВНЕСТИ
-   ========================================================= */
+/* ВНЕСТИ */
 let opType = 'Оклад';
 
 function openMoneySheet() {
@@ -1494,9 +1506,7 @@ function updateMoneyHint() {
     }
 }
 
-/* =========================================================
-   ЗАБРАТЬ
-   ========================================================= */
+/* ЗАБРАТЬ */
 function openTakeSheet() {
     const s = getSelectedSavings();
     if (!s) { notifyWarn('Нет накопления', 'Выбери накопление'); return; }
@@ -1526,9 +1536,7 @@ function updateTakeHint() {
     }
 }
 
-/* =========================================================
-   ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ
-   ========================================================= */
+/* ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ */
 function switchScreen(key) {
     const screens = { home: $('screen-home'), pay: $('screen-pay') };
     if (!screens[key]) return;
@@ -1541,9 +1549,7 @@ function switchScreen(key) {
     if (key === 'home') renderHome();
 }
 
-/* =========================================================
-   CONFIRM
-   ========================================================= */
+/* CONFIRM */
 function openConfirm() {
     const date = parseKey(viewDateKey);
     if (isWeekend(date)) return;
@@ -1556,17 +1562,12 @@ function closeConfirm() {
     const c = $('confirmSheet'); if (c) c.classList.remove('open');
 }
 
-/* =========================================================
-   НАВЕШИВАНИЕ ОБРАБОТЧИКОВ — КАЖДЫЙ В TRY/CATCH
-   ========================================================= */
-
-/* Кнопка + */
+/* ОБРАБОТЧИКИ */
 try {
     const b = $('addBtn');
     if (b) b.addEventListener('click', openSheetToday);
 } catch(e) { console.warn('addBtn fail', e); }
 
-/* Bottom sheet ввод */
 try {
     const c = $('cancelBtn'); if (c) c.addEventListener('click', closeSheet);
     const s = $('saveBtn'); if (s) s.addEventListener('click', saveSheet);
@@ -1586,7 +1587,6 @@ try {
     });
 } catch(e) { console.warn('quick-btn add fail', e); }
 
-/* Цели на главной */
 try {
     const l = $('goalLinesPanel'); if (l) l.addEventListener('click', () => openGoalSheet('lines'));
     const m = $('goalMachinesPanel'); if (m) m.addEventListener('click', () => openGoalSheet('machines'));
@@ -1607,7 +1607,6 @@ try {
     });
 } catch(e) { console.warn('goal buttons fail', e); }
 
-/* Календарь */
 try {
     const t = $('calTitle');
     if (t) t.addEventListener('click', () => {
@@ -1631,7 +1630,6 @@ try {
     });
 } catch(e) { console.warn('calendar header fail', e); }
 
-/* Детали дня */
 try {
     const c = $('dayDetailsClose');
     if (c) c.addEventListener('click', () => {
@@ -1681,7 +1679,6 @@ try {
     });
 } catch(e) { console.warn('day details fail', e); }
 
-/* Confirm */
 try {
     const c = $('dayIncomeCard'); if (c) c.addEventListener('click', openConfirm);
     const yb = $('confirmYes');
@@ -1707,26 +1704,20 @@ try {
     const cc = $('confirmCancel'); if (cc) cc.addEventListener('click', closeConfirm);
 } catch(e) { console.warn('confirm fail', e); }
 
-/* Bottom nav — ДЕЛЕГИРОВАНИЕ, всегда работает */
 try {
     const bn = $('bottomNav');
     if (bn) bn.addEventListener('click', (e) => {
         const item = e.target.closest('.nav-item');
         if (!item) return;
-        const key = item.dataset.screen;
-        switchScreen(key);
+        switchScreen(item.dataset.screen);
     });
 } catch(e) { console.warn('bottom nav fail', e); }
 
-/* Overlay клик */
 try {
     const o = $('sheetOverlay');
     if (o) o.addEventListener('click', closeSheet);
 } catch(e) { console.warn('overlay fail', e); }
 
-/* =========================================================
-   НАКОПЛЕНИЯ — ОБРАБОТЧИКИ
-   ========================================================= */
 try {
     const c = $('createSavingsBtn'); if (c) c.addEventListener('click', () => openSavingsSheet(null));
     const hp = $('heroPlus'); if (hp) hp.addEventListener('click', () => openSavingsSheet(null));
@@ -1780,7 +1771,6 @@ try {
     });
 } catch(e) { console.warn('savings sheet fail', e); }
 
-/* Список накоплений + история */
 try {
     const sl = $('savingsList');
     if (sl) sl.addEventListener('click', (e) => {
@@ -1802,7 +1792,6 @@ try {
     });
 } catch(e) { console.warn('savings list fail', e); }
 
-/* Глаз */
 try {
     const pe = $('payEyeBtn');
     if (pe) pe.addEventListener('click', () => {
@@ -1816,7 +1805,6 @@ try {
     });
 } catch(e) { console.warn('eye fail', e); }
 
-/* Внести */
 try {
     const am = $('addMoneyBtn'); if (am) am.addEventListener('click', openMoneySheet);
     const mc = $('moneyCancelBtn'); if (mc) mc.addEventListener('click', closeSheet);
@@ -1863,7 +1851,6 @@ try {
     });
 } catch(e) { console.warn('money sheet fail', e); }
 
-/* Забрать */
 try {
     const hm = $('heroMinus'); if (hm) hm.addEventListener('click', openTakeSheet);
     const tc = $('takeCancelBtn'); if (tc) tc.addEventListener('click', closeSheet);
@@ -1900,7 +1887,6 @@ try {
     });
 } catch(e) { console.warn('take sheet fail', e); }
 
-/* Очистка */
 try {
     const cb = $('clearAllBtn');
     if (cb) cb.addEventListener('click', () => {
@@ -1920,9 +1906,7 @@ try {
     });
 } catch(e) { console.warn('clear all fail', e); }
 
-/* =========================================================
-   СТАРТ — ВЫЗЫВАЕТСЯ ПОСЛЕ ВСЕХ ОБРАБОТЧИКОВ
-   ========================================================= */
+/* СТАРТ */
 setTimeout(() => {
     try { renderHome(); } catch(e) { console.error('initial renderHome fail:', e); }
     try { renderSavings(); } catch(e) { console.error('initial renderSavings fail:', e); }
