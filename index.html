@@ -129,7 +129,9 @@ body {
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; -webkit-tap-highlight-color: transparent;
     flex-shrink: 0;
+    transition: background 0.15s ease;
 }
+.cal-nav:active { background: #3a3a3c; }
 .cal-nav svg { width: 16px; height: 16px; stroke: #ffffff; stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 
 .cal-weekday-header { display: none; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 8px; padding: 0 2px; }
@@ -138,15 +140,15 @@ body {
     display: flex; justify-content: space-between;
     align-items: flex-start; padding: 0 2px;
     touch-action: pan-y;
-    transition: transform 0.18s ease-out, opacity 0.18s ease-out;
+    transition: transform 0.22s ease-out, opacity 0.22s ease-out;
 }
-.week-days.sliding-left {
-    transform: translateX(-30px);
-    opacity: 0.4;
+.week-days.slide-left {
+    transform: translateX(-40px);
+    opacity: 0.3;
 }
-.week-days.sliding-right {
-    transform: translateX(30px);
-    opacity: 0.4;
+.week-days.slide-right {
+    transform: translateX(40px);
+    opacity: 0.3;
 }
 .calendar-wrapper.expanded .cal-weekday-header { display: grid; }
 .calendar-wrapper.expanded .week-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
@@ -242,6 +244,16 @@ body {
 .sheet-btn.save { background: #2e8eff; color: #ffffff; }
 .sheet-btn.danger { background: #ff453a; color: #ffffff; }
 
+.confirm-sheet { position: fixed; bottom: 0; left: 50%; transform: translate(-50%, 100%); width: 100%; max-width: 390px; background: #1c1c1e; border-radius: 28px 28px 0 0; padding: 20px 20px 32px 20px; z-index: 102; transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1); color: #ffffff; }
+.confirm-sheet.open { transform: translate(-50%, 0); }
+.confirm-title { font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 8px; }
+.confirm-sub { font-size: 14px; font-weight: 500; color: #8e8e93; text-align: center; margin-bottom: 20px; }
+.confirm-actions { display: flex; flex-direction: column; gap: 10px; }
+.confirm-btn { width: 100%; border: none; border-radius: 16px; padding: 16px 0; font-size: 16px; font-weight: 700; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+.confirm-btn.yes { background: #2e8eff; color: #ffffff; }
+.confirm-btn.no { background: #2c2c2e; color: #ffffff; }
+.confirm-btn.cancel2 { background: transparent; color: #8e8e93; font-weight: 600; }
+
 .toast-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 200; opacity: 0; transition: opacity 0.2s ease; }
 .toast-overlay.open { opacity: 1; pointer-events: auto; }
 .toast-box { background: #2c2c2e; border-radius: 20px; padding: 20px 22px; max-width: 300px; width: calc(100% - 60px); text-align: center; border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6); transform: scale(0.9); transition: transform 0.2s cubic-bezier(0.32, 0.72, 0, 1); }
@@ -261,17 +273,7 @@ body {
 .toast-btn.secondary { background: #3a3a3c; color: #ffffff; }
 
 .pay-hero { background: linear-gradient(160deg, #1c2e3a 0%, #0f1d26 100%); border-radius: 28px; padding: 20px; margin-bottom: 16px; border: 1px solid rgba(255, 255, 255, 0.06); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); position: relative; }
-.pay-hello {
-    font-size: 22px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    margin-bottom: 16px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: calc(100% - 100px);
-    padding-right: 8px;
-}
+.pay-hello { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 100px); padding-right: 8px; }
 .pay-hero-actions { position: absolute; top: 16px; right: 16px; display: flex; gap: 8px; }
 .hero-btn { width: 40px; height: 40px; border-radius: 50%; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; color: #ffffff; }
 .hero-btn svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
@@ -409,7 +411,7 @@ body {
                     <div class="cal-title-wrap">
                         <div class="week-title" id="calTitle">Неделя</div>
                         <div class="cal-month" id="calMonth"></div>
-                        <div class="cal-avg" id="calAvg">—</div>
+                        <div class="cal-avg" id="calAvg"></div>
                     </div>
                     <div class="cal-nav" id="calNext" style="display:none;"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
                 </div>
@@ -629,6 +631,16 @@ body {
     </div>
 </div>
 
+<div class="confirm-sheet" id="confirmSheet">
+    <div class="confirm-title">Рабочий день?</div>
+    <div class="confirm-sub" id="confirmDate">—</div>
+    <div class="confirm-actions">
+        <button class="confirm-btn yes" id="confirmYes">Да, работаю</button>
+        <button class="confirm-btn no" id="confirmNo">Нет, выходной / больничный</button>
+        <button class="confirm-btn cancel2" id="confirmCancel">Отмена</button>
+    </div>
+</div>
+
 <div class="toast-overlay" id="toastOverlay">
     <div class="toast-box">
         <div class="toast-icon" id="toastIcon">
@@ -651,51 +663,57 @@ function formatMoney(v) { const n = Number(v); if (!isFinite(n)) return '0 ₽';
 function formatPercent(v) { const n = Number(v); if (!isFinite(n)) return '0%'; return (Math.round(n * 10) / 10).toLocaleString('ru-RU') + '%'; }
 function safeGet(key, fallback) { try { const raw = localStorage.getItem(key); if (raw === null) return fallback; return JSON.parse(raw); } catch(e) { console.warn('[job] safeGet fail:', key, e); return fallback; } }
 function safeSet(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch(e) { console.warn('[job] safeSet fail:', key, e); } }
+function $(id) { return document.getElementById(id); }
 
 /* =========================================================
    TOAST
    ========================================================= */
-const toastOverlay = document.getElementById('toastOverlay');
-const toastIcon = document.getElementById('toastIcon');
-const toastIconSvg = document.getElementById('toastIconSvg');
-const toastTitle = document.getElementById('toastTitle');
-const toastMessage = document.getElementById('toastMessage');
-const toastActions = document.getElementById('toastActions');
+const toastOverlay = $('toastOverlay');
+const toastIcon = $('toastIcon');
+const toastIconSvg = $('toastIconSvg');
+const toastTitle = $('toastTitle');
+const toastMessage = $('toastMessage');
+const toastActions = $('toastActions');
 let toastTimeout = null;
 
 function hideToast() {
-    toastOverlay.classList.remove('open');
-    toastActions.innerHTML = '';
+    if (toastOverlay) toastOverlay.classList.remove('open');
+    if (toastActions) toastActions.innerHTML = '';
     if (toastTimeout) clearTimeout(toastTimeout);
 }
 function showToast(opts) {
+    if (!toastOverlay) return;
     const { type = 'info', title = '', message = '', actions = [], autoClose = 2200 } = opts;
-    toastIcon.className = 'toast-icon ' + type;
+    if (toastIcon) toastIcon.className = 'toast-icon ' + type;
     const ICONS = {
         info:    '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
         success: '<polyline points="20 6 9 17 4 12"/>',
         warn:    '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
         error:   '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>'
     };
-    toastIconSvg.innerHTML = ICONS[type] || ICONS.info;
-    toastTitle.textContent = title;
-    toastMessage.textContent = message;
-    toastActions.innerHTML = '';
-    if (actions.length > 0) {
-        actions.forEach(a => {
-            const btn = document.createElement('button');
-            btn.className = 'toast-btn ' + (a.variant || 'secondary');
-            btn.textContent = a.label;
-            btn.addEventListener('click', () => { hideToast(); if (typeof a.onClick === 'function') a.onClick(); });
-            toastActions.appendChild(btn);
-        });
-        if (toastTimeout) clearTimeout(toastTimeout);
-    } else if (autoClose > 0) {
-        toastTimeout = setTimeout(() => hideToast(), autoClose);
+    if (toastIconSvg) toastIconSvg.innerHTML = ICONS[type] || ICONS.info;
+    if (toastTitle) toastTitle.textContent = title;
+    if (toastMessage) toastMessage.textContent = message;
+    if (toastActions) {
+        toastActions.innerHTML = '';
+        if (actions.length > 0) {
+            actions.forEach(a => {
+                const btn = document.createElement('button');
+                btn.className = 'toast-btn ' + (a.variant || 'secondary');
+                btn.textContent = a.label;
+                btn.addEventListener('click', () => { hideToast(); if (typeof a.onClick === 'function') a.onClick(); });
+                toastActions.appendChild(btn);
+            });
+            if (toastTimeout) clearTimeout(toastTimeout);
+        } else if (autoClose > 0) {
+            toastTimeout = setTimeout(() => hideToast(), autoClose);
+        }
     }
     toastOverlay.classList.add('open');
 }
-toastOverlay.addEventListener('click', (e) => { if (e.target === toastOverlay) hideToast(); });
+if (toastOverlay) {
+    toastOverlay.addEventListener('click', (e) => { if (e.target === toastOverlay) hideToast(); });
+}
 
 function notifyInfo(t, m)    { showToast({ type: 'info', title: t, message: m }); }
 function notifySuccess(t, m) { showToast({ type: 'success', title: t, message: m }); }
@@ -847,37 +865,34 @@ function renderHome() {
         const isToday = viewDateKey === todayKey;
         const isViewWeekend = isWeekend(viewDate);
 
-        const todayLinesEl = document.getElementById('todayLines');
-        const todayMachinesEl = document.getElementById('todayMachines');
-        const mainDayLabel = document.getElementById('mainDayLabel');
+        const todayLinesEl = $('todayLines');
+        const todayMachinesEl = $('todayMachines');
+        const mainDayLabel = $('mainDayLabel');
 
         if (todayLinesEl) todayLinesEl.textContent = Number(view.lines) || 0;
         if (todayMachinesEl) todayMachinesEl.textContent = Number(view.machines) || 0;
 
         if (mainDayLabel) {
-            if (isToday) {
-                mainDayLabel.textContent = 'сегодня';
-            } else {
-                mainDayLabel.textContent = DAYS_RU_SHORT[viewDate.getDay()] + ', ' + viewDate.getDate() + ' ' + MONTHS_RU_SHORT[viewDate.getMonth()];
-            }
+            if (isToday) mainDayLabel.textContent = 'сегодня';
+            else mainDayLabel.textContent = DAYS_RU_SHORT[viewDate.getDay()] + ', ' + viewDate.getDate() + ' ' + MONTHS_RU_SHORT[viewDate.getMonth()];
         }
 
         try { renderGoals(); } catch(e) { console.warn('renderGoals fail', e); }
         try { renderWeek(data); } catch(e) { console.warn('renderWeek fail', e); }
 
-        const dayIncomeEl = document.getElementById('dayIncome');
+        const dayIncomeEl = $('dayIncome');
         if (dayIncomeEl) {
             if (isViewWeekend || !view.worked) dayIncomeEl.textContent = '—';
             else dayIncomeEl.textContent = formatMoney(calcDayIncome(view));
         }
 
-        const bonusEl = document.getElementById('bonus');
+        const bonusEl = $('bonus');
         if (bonusEl) {
             if (isViewWeekend || !view.worked) bonusEl.textContent = '—';
             else bonusEl.textContent = formatMoney(calcDayBonus(view.lines || 0, view.machines || 0));
         }
 
-        const salaryEl = document.getElementById('salary');
+        const salaryEl = $('salary');
         if (salaryEl) {
             const month = calcMonthStats();
             salaryEl.textContent = formatMoney(month.total);
@@ -892,32 +907,24 @@ function renderGoals() {
     const linesTotal = month.totalLines;
     const linesGoal = GOAL_LINES();
     const linesPercent = linesGoal > 0 ? Math.min(100, Math.round((linesTotal / linesGoal) * 100)) : 0;
-    const monthLinesTotalEl = document.getElementById('monthLinesTotal');
-    const monthLinesGoalEl = document.getElementById('monthLinesGoal');
-    const monthLinesBarEl = document.getElementById('monthLinesBar');
-    const monthLinesPercentEl = document.getElementById('monthLinesPercent');
-    if (monthLinesTotalEl) monthLinesTotalEl.textContent = linesTotal.toLocaleString('ru-RU');
-    if (monthLinesGoalEl) monthLinesGoalEl.textContent = linesGoal.toLocaleString('ru-RU');
-    if (monthLinesBarEl) {
-        monthLinesBarEl.style.width = linesPercent + '%';
-        monthLinesBarEl.className = 'progress-fill ' + progressClass(linesPercent);
+    if ($('monthLinesTotal')) $('monthLinesTotal').textContent = linesTotal.toLocaleString('ru-RU');
+    if ($('monthLinesGoal')) $('monthLinesGoal').textContent = linesGoal.toLocaleString('ru-RU');
+    if ($('monthLinesBar')) {
+        $('monthLinesBar').style.width = linesPercent + '%';
+        $('monthLinesBar').className = 'progress-fill ' + progressClass(linesPercent);
     }
-    if (monthLinesPercentEl) monthLinesPercentEl.textContent = linesPercent + '% от цели';
+    if ($('monthLinesPercent')) $('monthLinesPercent').textContent = linesPercent + '% от цели';
 
     const machinesTotal = month.totalMachines;
     const machinesGoal = GOAL_MACHINES();
     const machinesPercent = machinesGoal > 0 ? Math.min(100, Math.round((machinesTotal / machinesGoal) * 100)) : 0;
-    const monthMachinesTotalEl = document.getElementById('monthMachinesTotal');
-    const monthMachinesGoalEl = document.getElementById('monthMachinesGoal');
-    const monthMachinesBarEl = document.getElementById('monthMachinesBar');
-    const monthMachinesPercentEl = document.getElementById('monthMachinesPercent');
-    if (monthMachinesTotalEl) monthMachinesTotalEl.textContent = machinesTotal;
-    if (monthMachinesGoalEl) monthMachinesGoalEl.textContent = machinesGoal;
-    if (monthMachinesBarEl) {
-        monthMachinesBarEl.style.width = machinesPercent + '%';
-        monthMachinesBarEl.className = 'progress-fill ' + progressClass(machinesPercent);
+    if ($('monthMachinesTotal')) $('monthMachinesTotal').textContent = machinesTotal;
+    if ($('monthMachinesGoal')) $('monthMachinesGoal').textContent = machinesGoal;
+    if ($('monthMachinesBar')) {
+        $('monthMachinesBar').style.width = machinesPercent + '%';
+        $('monthMachinesBar').className = 'progress-fill ' + progressClass(machinesPercent);
     }
-    if (monthMachinesPercentEl) monthMachinesPercentEl.textContent = machinesPercent + '% от цели';
+    if ($('monthMachinesPercent')) $('monthMachinesPercent').textContent = machinesPercent + '% от цели';
 }
 
 /* =========================================================
@@ -927,19 +934,17 @@ let weekOffset = 0;
 let currentMonth = new Date();
 let selectedDayKey = null;
 
-const calendarWrapper = document.getElementById('calendarWrapper');
-const calTitle = document.getElementById('calTitle');
-const calMonth = document.getElementById('calMonth');
-const calAvg = document.getElementById('calAvg');
-const calPrev = document.getElementById('calPrev');
-const calNext = document.getElementById('calNext');
-const calCollapse = document.getElementById('calCollapse');
-const weekDaysEl = document.getElementById('weekDays');
+const calendarWrapper = $('calendarWrapper');
+const calTitle = $('calTitle');
+const calMonth = $('calMonth');
+const calAvg = $('calAvg');
+const calPrev = $('calPrev');
+const calNext = $('calNext');
+const calCollapse = $('calCollapse');
+const weekDaysEl = $('weekDays');
 
-/* Подсчёт среднего за неделю */
 function calcWeekAverage(data, monday) {
-    let totalLines = 0;
-    let workedDays = 0;
+    let totalLines = 0, workedDays = 0;
     for (let i = 0; i < 7; i++) {
         const d = new Date(monday);
         d.setDate(monday.getDate() + i);
@@ -954,10 +959,8 @@ function calcWeekAverage(data, monday) {
     return Math.round(totalLines / workedDays);
 }
 
-/* Подсчёт среднего за месяц */
 function calcMonthAverage(data, y, m) {
-    let totalLines = 0;
-    let workedDays = 0;
+    let totalLines = 0, workedDays = 0;
     Object.keys(data).forEach(key => {
         const p = String(key).split('-').map(Number);
         if (p[0] === y && p[1] === m + 1) {
@@ -981,7 +984,6 @@ function renderWeek(data) {
     monday.setDate(monday.getDate() - day + weekOffset * 7);
     monday.setHours(0, 0, 0, 0);
 
-    // Подпись месяца — первой
     const startMonth = monday.getMonth();
     const endDate = new Date(monday.getTime() + 6 * 86400000);
     const endMonth = endDate.getMonth();
@@ -989,10 +991,11 @@ function renderWeek(data) {
     let monthLabel;
     if (startMonth === endMonth) monthLabel = MONTHS_RU[startMonth] + ' ' + year;
     else monthLabel = MONTHS_RU[startMonth] + ' – ' + MONTHS_RU[endMonth] + ' ' + year;
-    calMonth.textContent = monthLabel;
+    if (calMonth) calMonth.textContent = monthLabel;
 
-    // Дни
+    if (!weekDaysEl) return;
     weekDaysEl.innerHTML = '';
+
     for (let i = 0; i < 7; i++) {
         const d = new Date(monday);
         d.setDate(monday.getDate() + i);
@@ -1023,14 +1026,12 @@ function renderWeek(data) {
         weekDaysEl.appendChild(item);
     }
 
-    // Среднее за неделю
     const avg = calcWeekAverage(data, monday);
-    calAvg.textContent = avg !== null ? (avg.toLocaleString('ru-RU') + ' в среднем за неделю') : '—';
+    if (calAvg) calAvg.textContent = avg !== null ? (avg.toLocaleString('ru-RU') + ' в среднем за неделю') : '—';
 }
 
 function renderMonth(date) {
-    // Заголовок
-    calMonth.textContent = MONTHS_RU[date.getMonth()] + ' ' + date.getFullYear();
+    if (calMonth) calMonth.textContent = MONTHS_RU[date.getMonth()] + ' ' + date.getFullYear();
 
     const data = loadData();
     const y = date.getFullYear();
@@ -1041,6 +1042,7 @@ function renderMonth(date) {
     const startWeekday = (firstDay.getDay() + 6) % 7;
     const prevMonthLast = new Date(y, m, 0).getDate();
     const todayKey = getTodayKey();
+    if (!weekDaysEl) return;
     weekDaysEl.innerHTML = '';
     for (let i = 0; i < 42; i++) {
         const cellIndex = i - startWeekday;
@@ -1068,37 +1070,38 @@ function renderMonth(date) {
         weekDaysEl.appendChild(item);
     }
 
-    // Среднее за месяц
     const avg = calcMonthAverage(data, y, m);
-    calAvg.textContent = avg !== null ? (avg.toLocaleString('ru-RU') + ' в среднем за месяц') : '—';
+    if (calAvg) calAvg.textContent = avg !== null ? (avg.toLocaleString('ru-RU') + ' в среднем за месяц') : '—';
 }
 
 function expandCalendar() {
-    calendarWrapper.classList.add('expanded');
-    calTitle.textContent = 'Календарь';
-    calPrev.style.display = 'flex';
-    calNext.style.display = 'flex';
+    if (calendarWrapper) calendarWrapper.classList.add('expanded');
+    if (calTitle) calTitle.textContent = 'Календарь';
+    if (calPrev) calPrev.style.display = 'flex';
+    if (calNext) calNext.style.display = 'flex';
     renderMonth(currentMonth);
 }
 function collapseCalendar() {
-    calendarWrapper.classList.remove('expanded');
-    calTitle.textContent = 'Неделя';
-    calPrev.style.display = 'none';
-    calNext.style.display = 'none';
+    if (calendarWrapper) calendarWrapper.classList.remove('expanded');
+    if (calTitle) calTitle.textContent = 'Неделя';
+    if (calPrev) calPrev.style.display = 'none';
+    if (calNext) calNext.style.display = 'none';
     renderWeek(loadData());
 }
 
-calTitle.addEventListener('click', () => {
-    if (calendarWrapper.classList.contains('expanded')) collapseCalendar();
-    else expandCalendar();
-});
-calCollapse.addEventListener('click', collapseCalendar);
-calPrev.addEventListener('click', (e) => {
+if (calTitle) {
+    calTitle.addEventListener('click', () => {
+        if (calendarWrapper.classList.contains('expanded')) collapseCalendar();
+        else expandCalendar();
+    });
+}
+if (calCollapse) calCollapse.addEventListener('click', collapseCalendar);
+if (calPrev) calPrev.addEventListener('click', (e) => {
     e.stopPropagation();
     currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
     renderMonth(currentMonth);
 });
-calNext.addEventListener('click', (e) => {
+if (calNext) calNext.addEventListener('click', (e) => {
     e.stopPropagation();
     currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
     renderMonth(currentMonth);
@@ -1106,64 +1109,61 @@ calNext.addEventListener('click', (e) => {
 
 /* СВАЙП с анимацией */
 let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
-weekDaysEl.addEventListener('touchstart', (e) => {
-    const t = e.touches[0];
-    touchStartX = t.clientX;
-    touchStartY = t.clientY;
-    touchStartTime = Date.now();
-}, { passive: true });
+if (weekDaysEl) {
+    weekDaysEl.addEventListener('touchstart', (e) => {
+        const t = e.touches[0];
+        touchStartX = t.clientX;
+        touchStartY = t.clientY;
+        touchStartTime = Date.now();
+    }, { passive: true });
 
-weekDaysEl.addEventListener('touchend', (e) => {
-    const t = e.changedTouches[0];
-    const dx = t.clientX - touchStartX;
-    const dy = t.clientY - touchStartY;
-    const dt = Date.now() - touchStartTime;
+    weekDaysEl.addEventListener('touchend', (e) => {
+        const t = e.changedTouches[0];
+        const dx = t.clientX - touchStartX;
+        const dy = t.clientY - touchStartY;
+        const dt = Date.now() - touchStartTime;
 
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) && dt < 500) {
-        const isExpanded = calendarWrapper.classList.contains('expanded');
-        const direction = dx < 0 ? 'left' : 'right';
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) && dt < 500) {
+            const isExpanded = calendarWrapper.classList.contains('expanded');
+            const direction = dx < 0 ? 'left' : 'right';
 
-        // Анимация
-        weekDaysEl.classList.add('sliding-' + direction);
+            weekDaysEl.classList.add('slide-' + direction);
 
-        setTimeout(() => {
-            if (isExpanded) {
-                if (direction === 'left') currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
-                else currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
-                renderMonth(currentMonth);
-            } else {
-                if (direction === 'left') weekOffset += 1;
-                else weekOffset -= 1;
-                renderWeek(loadData());
-            }
-
-            // Убираем класс после отрисовки
-            requestAnimationFrame(() => {
-                weekDaysEl.classList.remove('sliding-' + direction);
-            });
-        }, 120);
-    }
-}, { passive: true });
-
-weekDaysEl.addEventListener('click', (e) => {
-    const item = e.target.closest('.day-item');
-    if (!item) return;
-    const key = item.dataset.date;
-    if (!key) return;
-    if (!calendarWrapper.classList.contains('expanded')) {
-        if (e.target.closest('.day-dot')) {
-            selectedDayKey = key;
-            expandCalendar();
-            showDayDetails(key);
-        } else {
-            expandCalendar();
+            setTimeout(() => {
+                if (isExpanded) {
+                    if (direction === 'left') currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+                    else currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+                    renderMonth(currentMonth);
+                } else {
+                    if (direction === 'left') weekOffset += 1;
+                    else weekOffset -= 1;
+                    renderWeek(loadData());
+                }
+                weekDaysEl.classList.remove('slide-' + direction);
+            }, 150);
         }
-        return;
-    }
-    selectedDayKey = key;
-    renderMonth(currentMonth);
-    showDayDetails(key);
-});
+    }, { passive: true });
+
+    weekDaysEl.addEventListener('click', (e) => {
+        const item = e.target.closest('.day-item');
+        if (!item) return;
+        const key = item.dataset.date;
+        if (!key) return;
+        if (!calendarWrapper.classList.contains('expanded')) {
+            if (e.target.closest('.day-dot')) {
+                selectedDayKey = key;
+                expandCalendar();
+                showDayDetails(key);
+            } else {
+                expandCalendar();
+            }
+            return;
+        }
+        selectedDayKey = key;
+        renderMonth(currentMonth);
+        showDayDetails(key);
+    });
+}
 
 function showDayDetails(key) {
     viewDateKey = key;
@@ -1173,84 +1173,89 @@ function showDayDetails(key) {
     const entry = data[key] || { lines: 0, machines: 0, worked: false };
     const date = parseKey(key);
     const weekend = isWeekend(date);
-    document.getElementById('dayDetailsTitle').textContent = DAYS_RU_SHORT[date.getDay()] + ', ' + date.getDate() + ' ' + MONTHS_RU[date.getMonth()];
-    document.getElementById('ddLines').textContent = Number(entry.lines) || 0;
-    document.getElementById('ddMachines').textContent = Number(entry.machines) || 0;
+    if ($('dayDetailsTitle')) $('dayDetailsTitle').textContent = DAYS_RU_SHORT[date.getDay()] + ', ' + date.getDate() + ' ' + MONTHS_RU[date.getMonth()];
+    if ($('ddLines')) $('ddLines').textContent = Number(entry.lines) || 0;
+    if ($('ddMachines')) $('ddMachines').textContent = Number(entry.machines) || 0;
     if (!entry.worked || weekend) {
-        document.getElementById('ddIncome').textContent = '—';
-        document.getElementById('ddBonus').textContent = '—';
+        if ($('ddIncome')) $('ddIncome').textContent = '—';
+        if ($('ddBonus')) $('ddBonus').textContent = '—';
     } else {
-        document.getElementById('ddIncome').textContent = formatMoney(calcDayIncome(entry));
-        document.getElementById('ddBonus').textContent = formatMoney(calcDayBonus(entry.lines || 0, entry.machines || 0));
+        if ($('ddIncome')) $('ddIncome').textContent = formatMoney(calcDayIncome(entry));
+        if ($('ddBonus')) $('ddBonus').textContent = formatMoney(calcDayBonus(entry.lines || 0, entry.machines || 0));
     }
-    const yesBtn = document.getElementById('ddWorkYes');
-    const noBtn = document.getElementById('ddWorkNo');
-    const addBtn = document.getElementById('ddAdd');
+    const yesBtn = $('ddWorkYes');
+    const noBtn = $('ddWorkNo');
+    const addBtn = $('ddAdd');
     if (weekend) {
-        yesBtn.disabled = true;
-        noBtn.disabled = true;
-        addBtn.disabled = true;
-        addBtn.textContent = 'Выходной — ввод недоступен';
+        if (yesBtn) yesBtn.disabled = true;
+        if (noBtn) noBtn.disabled = true;
+        if (addBtn) { addBtn.disabled = true; addBtn.textContent = 'Выходной — ввод недоступен'; }
     } else {
-        yesBtn.disabled = false;
-        noBtn.disabled = false;
-        addBtn.disabled = false;
-        addBtn.textContent = 'Добавить строки / машины';
+        if (yesBtn) yesBtn.disabled = false;
+        if (noBtn) noBtn.disabled = false;
+        if (addBtn) { addBtn.disabled = false; addBtn.textContent = 'Добавить строки / машины'; }
     }
-    yesBtn.classList.toggle('active', entry.worked === true && !weekend);
-    noBtn.classList.toggle('active', entry.worked === false && !weekend);
-    document.getElementById('dayDetails').style.display = 'block';
+    if (yesBtn) yesBtn.classList.toggle('active', entry.worked === true && !weekend);
+    if (noBtn) noBtn.classList.toggle('active', entry.worked === false && !weekend);
+    if ($('dayDetails')) $('dayDetails').style.display = 'block';
 }
 
-document.getElementById('dayDetailsClose').addEventListener('click', () => {
-    document.getElementById('dayDetails').style.display = 'none';
-    selectedDayKey = null;
-    if (calendarWrapper.classList.contains('expanded')) renderMonth(currentMonth);
-    else renderWeek(loadData());
-});
-
-document.getElementById('ddWorkYes').addEventListener('click', () => {
-    if (!selectedDayKey) return;
-    const d = parseKey(selectedDayKey);
-    if (isWeekend(d)) return;
-    const data = loadData();
-    const e = data[selectedDayKey] || { lines: 0, machines: 0 };
-    e.worked = true;
-    data[selectedDayKey] = e;
-    saveData(data);
-    viewDateKey = selectedDayKey;
-    showDayDetails(selectedDayKey);
-    renderHome();
-});
-document.getElementById('ddWorkNo').addEventListener('click', () => {
-    if (!selectedDayKey) return;
-    const d = parseKey(selectedDayKey);
-    if (isWeekend(d)) return;
-    const data = loadData();
-    const e = data[selectedDayKey] || { lines: 0, machines: 0 };
-    e.worked = false;
-    data[selectedDayKey] = e;
-    saveData(data);
-    viewDateKey = selectedDayKey;
-    showDayDetails(selectedDayKey);
-    renderHome();
-});
-document.getElementById('ddAdd').addEventListener('click', () => {
-    if (!selectedDayKey) return;
-    const d = parseKey(selectedDayKey);
-    if (isWeekend(d)) return;
-    openSheetFor(selectedDayKey);
-});
+if ($('dayDetailsClose')) {
+    $('dayDetailsClose').addEventListener('click', () => {
+        if ($('dayDetails')) $('dayDetails').style.display = 'none';
+        selectedDayKey = null;
+        if (calendarWrapper.classList.contains('expanded')) renderMonth(currentMonth);
+        else renderWeek(loadData());
+    });
+}
+if ($('ddWorkYes')) {
+    $('ddWorkYes').addEventListener('click', () => {
+        if (!selectedDayKey) return;
+        const d = parseKey(selectedDayKey);
+        if (isWeekend(d)) return;
+        const data = loadData();
+        const e = data[selectedDayKey] || { lines: 0, machines: 0 };
+        e.worked = true;
+        data[selectedDayKey] = e;
+        saveData(data);
+        viewDateKey = selectedDayKey;
+        showDayDetails(selectedDayKey);
+        renderHome();
+    });
+}
+if ($('ddWorkNo')) {
+    $('ddWorkNo').addEventListener('click', () => {
+        if (!selectedDayKey) return;
+        const d = parseKey(selectedDayKey);
+        if (isWeekend(d)) return;
+        const data = loadData();
+        const e = data[selectedDayKey] || { lines: 0, machines: 0 };
+        e.worked = false;
+        data[selectedDayKey] = e;
+        saveData(data);
+        viewDateKey = selectedDayKey;
+        showDayDetails(selectedDayKey);
+        renderHome();
+    });
+}
+if ($('ddAdd')) {
+    $('ddAdd').addEventListener('click', () => {
+        if (!selectedDayKey) return;
+        const d = parseKey(selectedDayKey);
+        if (isWeekend(d)) return;
+        openSheetFor(selectedDayKey);
+    });
+}
 
 /* =========================================================
    BOTTOM SHEET — ВВОД
    ========================================================= */
-const overlay = document.getElementById('sheetOverlay');
-const sheet = document.getElementById('sheet');
-const inputLines = document.getElementById('inputLines');
-const inputMachines = document.getElementById('inputMachines');
-const sheetDate = document.getElementById('sheetDate');
-const sheetTitle = document.getElementById('sheetTitle');
+const overlay = $('sheetOverlay');
+const sheet = $('sheet');
+const inputLines = $('inputLines');
+const inputMachines = $('inputMachines');
+const sheetDate = $('sheetDate');
+const sheetTitle = $('sheetTitle');
 let sheetTargetKey = null;
 
 function openSheetFor(key) {
@@ -1259,12 +1264,12 @@ function openSheetFor(key) {
     sheetTargetKey = key;
     const data = loadData();
     const entry = data[key] || { lines: 0, machines: 0 };
-    inputLines.value = Number(entry.lines) || 0;
-    inputMachines.value = Number(entry.machines) || 0;
-    sheetTitle.textContent = DAYS_RU_SHORT[d.getDay()] + ', ' + d.getDate() + ' ' + MONTHS_RU[d.getMonth()];
-    sheetDate.textContent = d.getFullYear();
-    overlay.classList.add('open');
-    sheet.classList.add('open');
+    if (inputLines) inputLines.value = Number(entry.lines) || 0;
+    if (inputMachines) inputMachines.value = Number(entry.machines) || 0;
+    if (sheetTitle) sheetTitle.textContent = DAYS_RU_SHORT[d.getDay()] + ', ' + d.getDate() + ' ' + MONTHS_RU[d.getMonth()];
+    if (sheetDate) sheetDate.textContent = d.getFullYear();
+    if (overlay) overlay.classList.add('open');
+    if (sheet) sheet.classList.add('open');
 }
 
 function openSheetToday() {
@@ -1274,12 +1279,13 @@ function openSheetToday() {
 }
 
 function closeSheet() {
-    overlay.classList.remove('open');
-    sheet.classList.remove('open');
-    goalSheet.classList.remove('open');
-    savingsSheet.classList.remove('open');
-    moneySheet.classList.remove('open');
-    takeSheet.classList.remove('open');
+    if (overlay) overlay.classList.remove('open');
+    if (sheet) sheet.classList.remove('open');
+    if ($('goalSheet')) $('goalSheet').classList.remove('open');
+    if ($('savingsSheet')) $('savingsSheet').classList.remove('open');
+    if ($('moneySheet')) $('moneySheet').classList.remove('open');
+    if ($('takeSheet')) $('takeSheet').classList.remove('open');
+    if ($('confirmSheet')) $('confirmSheet').classList.remove('open');
 }
 
 function saveSheet() {
@@ -1298,41 +1304,81 @@ function saveSheet() {
     if (selectedDayKey) showDayDetails(selectedDayKey);
 }
 
-document.getElementById('addBtn').addEventListener('click', openSheetToday);
-document.getElementById('cancelBtn').addEventListener('click', closeSheet);
-document.getElementById('saveBtn').addEventListener('click', saveSheet);
+if ($('addBtn')) $('addBtn').addEventListener('click', openSheetToday);
+if ($('cancelBtn')) $('cancelBtn').addEventListener('click', closeSheet);
+if ($('saveBtn')) $('saveBtn').addEventListener('click', saveSheet);
 
 document.querySelectorAll('.quick-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const field = btn.dataset.add;
         const val = parseInt(btn.dataset.val);
-        if (field === 'lines') inputLines.value = (parseInt(inputLines.value) || 0) + val;
-        else if (field === 'machines') inputMachines.value = (parseInt(inputMachines.value) || 0) + val;
+        if (!field) return;
+        if (field === 'lines' && inputLines) inputLines.value = (parseInt(inputLines.value) || 0) + val;
+        else if (field === 'machines' && inputMachines) inputMachines.value = (parseInt(inputMachines.value) || 0) + val;
+        else if (field === 'money' && $('moneyAmountInput')) {
+            $('moneyAmountInput').value = (parseFloat($('moneyAmountInput').value) || 0) + val;
+            if (typeof updateMoneyHint === 'function') updateMoneyHint();
+        }
+        else if (field === 'take' && $('takeAmountInput')) {
+            $('takeAmountInput').value = (parseFloat($('takeAmountInput').value) || 0) + val;
+            if (typeof updateTakeHint === 'function') updateTakeHint();
+        }
+    });
+});
+
+/* Обработка data-money и data-take */
+document.querySelectorAll('[data-money]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const add = parseFloat(btn.dataset.money) || 0;
+        if ($('moneyAmountInput')) {
+            $('moneyAmountInput').value = (parseFloat($('moneyAmountInput').value) || 0) + add;
+            if (typeof updateMoneyHint === 'function') updateMoneyHint();
+        }
+    });
+});
+document.querySelectorAll('[data-take]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const val = btn.dataset.take;
+        const s = getSelectedSavings();
+        if (!s) return;
+        if (val === 'all') {
+            if ($('takeAmountInput')) $('takeAmountInput').value = s.balance || 0;
+        } else {
+            if ($('takeAmountInput')) $('takeAmountInput').value = (parseFloat($('takeAmountInput').value) || 0) + (parseFloat(val) || 0);
+        }
+        if (typeof updateTakeHint === 'function') updateTakeHint();
     });
 });
 
 /* ЦЕЛЬ */
-const goalSheet = document.getElementById('goalSheet');
-const goalTitle = document.getElementById('goalTitle');
-const goalSubtitle = document.getElementById('goalSubtitle');
-const goalFieldLabel = document.getElementById('goalFieldLabel');
-const goalInput = document.getElementById('goalInput');
+const goalSheet = $('goalSheet');
+const goalTitle = $('goalTitle');
+const goalSubtitle = $('goalSubtitle');
+const goalFieldLabel = $('goalFieldLabel');
+const goalInput = $('goalInput');
 let goalTarget = null;
 
 function openGoalSheet(type) {
     goalTarget = type;
     const now = new Date();
-    goalSubtitle.textContent = MONTHS_RU[now.getMonth()] + ' ' + now.getFullYear();
-    if (type === 'lines') { goalTitle.textContent = 'Цель по строкам'; goalFieldLabel.textContent = 'Строк в месяц'; goalInput.value = GOAL_LINES(); }
-    else { goalTitle.textContent = 'Цель по машинам'; goalFieldLabel.textContent = 'Машин в месяц'; goalInput.value = GOAL_MACHINES(); }
-    overlay.classList.add('open');
-    goalSheet.classList.add('open');
+    if (goalSubtitle) goalSubtitle.textContent = MONTHS_RU[now.getMonth()] + ' ' + now.getFullYear();
+    if (type === 'lines') {
+        if (goalTitle) goalTitle.textContent = 'Цель по строкам';
+        if (goalFieldLabel) goalFieldLabel.textContent = 'Строк в месяц';
+        if (goalInput) goalInput.value = GOAL_LINES();
+    } else {
+        if (goalTitle) goalTitle.textContent = 'Цель по машинам';
+        if (goalFieldLabel) goalFieldLabel.textContent = 'Машин в месяц';
+        if (goalInput) goalInput.value = GOAL_MACHINES();
+    }
+    if (overlay) overlay.classList.add('open');
+    if (goalSheet) goalSheet.classList.add('open');
 }
 
-document.getElementById('goalLinesPanel').addEventListener('click', () => openGoalSheet('lines'));
-document.getElementById('goalMachinesPanel').addEventListener('click', () => openGoalSheet('machines'));
-document.getElementById('goalCancelBtn').addEventListener('click', closeSheet);
-document.getElementById('goalSaveBtn').addEventListener('click', () => {
+if ($('goalLinesPanel')) $('goalLinesPanel').addEventListener('click', () => openGoalSheet('lines'));
+if ($('goalMachinesPanel')) $('goalMachinesPanel').addEventListener('click', () => openGoalSheet('machines'));
+if ($('goalCancelBtn')) $('goalCancelBtn').addEventListener('click', closeSheet);
+if ($('goalSaveBtn')) $('goalSaveBtn').addEventListener('click', () => {
     const val = Math.max(1, parseInt(goalInput.value) || 1);
     if (goalTarget === 'lines') settings.goalLines = val;
     else settings.goalMachines = val;
@@ -1345,42 +1391,41 @@ document.getElementById('goalSaveBtn').addEventListener('click', () => {
 /* =========================================================
    ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ
    ========================================================= */
-const bottomNav = document.getElementById('bottomNav');
-const screens = { home: document.getElementById('screen-home'), pay: document.getElementById('screen-pay') };
+const bottomNav = $('bottomNav');
+const screens = { home: $('screen-home'), pay: $('screen-pay') };
 
-bottomNav.addEventListener('click', (e) => {
-    const item = e.target.closest('.nav-item');
-    if (!item) return;
-    const key = item.dataset.screen;
-    if (!key || !screens[key]) return;
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    item.classList.add('active');
-    Object.keys(screens).forEach(k => screens[k].classList.remove('active'));
-    screens[key].classList.add('active');
-    if (key === 'pay') renderSavings();
-    if (key === 'home') renderHome();
-});
+if (bottomNav) {
+    bottomNav.addEventListener('click', (e) => {
+        const item = e.target.closest('.nav-item');
+        if (!item) return;
+        const key = item.dataset.screen;
+        if (!key || !screens[key]) return;
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        item.classList.add('active');
+        Object.keys(screens).forEach(k => { if (screens[k]) screens[k].classList.remove('active'); });
+        screens[key].classList.add('active');
+        if (key === 'pay') renderSavings();
+        if (key === 'home') renderHome();
+    });
+}
 
 /* =========================================================
-   CONFIRM (для «Доход за день»)
+   CONFIRM
    ========================================================= */
-const confirmSheet = document.getElementById('confirmSheet');
-const confirmDate = document.getElementById('confirmDate');
-
 function openConfirm() {
     const date = parseKey(viewDateKey);
     if (isWeekend(date)) return;
-    confirmDate.textContent = date.getDate() + ' ' + MONTHS_RU[date.getMonth()] + ' ' + date.getFullYear();
-    overlay.classList.add('open');
-    confirmSheet.classList.add('open');
+    if ($('confirmDate')) $('confirmDate').textContent = date.getDate() + ' ' + MONTHS_RU[date.getMonth()] + ' ' + date.getFullYear();
+    if (overlay) overlay.classList.add('open');
+    if ($('confirmSheet')) $('confirmSheet').classList.add('open');
 }
 function closeConfirm() {
-    overlay.classList.remove('open');
-    confirmSheet.classList.remove('open');
+    if (overlay) overlay.classList.remove('open');
+    if ($('confirmSheet')) $('confirmSheet').classList.remove('open');
 }
 
-document.getElementById('dayIncomeCard').addEventListener('click', openConfirm);
-document.getElementById('confirmYes').addEventListener('click', () => {
+if ($('dayIncomeCard')) $('dayIncomeCard').addEventListener('click', openConfirm);
+if ($('confirmYes')) $('confirmYes').addEventListener('click', () => {
     const data = loadData();
     const key = viewDateKey;
     const existing = data[key] || { lines: 0, machines: 0 };
@@ -1389,7 +1434,7 @@ document.getElementById('confirmYes').addEventListener('click', () => {
     closeConfirm();
     renderHome();
 });
-document.getElementById('confirmNo').addEventListener('click', () => {
+if ($('confirmNo')) $('confirmNo').addEventListener('click', () => {
     const data = loadData();
     const key = viewDateKey;
     const existing = data[key] || { lines: 0, machines: 0 };
@@ -1398,7 +1443,7 @@ document.getElementById('confirmNo').addEventListener('click', () => {
     closeConfirm();
     renderHome();
 });
-document.getElementById('confirmCancel').addEventListener('click', closeConfirm);
+if ($('confirmCancel')) $('confirmCancel').addEventListener('click', closeConfirm);
 
 /* =========================================================
    НАКОПЛЕНИЯ
@@ -1407,19 +1452,22 @@ function renderSavings() {
     const state = savingsState;
     const selected = getSelectedSavings();
 
-    const heroTitleEl = document.getElementById('heroTitle');
-    const heroAmountEl = document.getElementById('heroAmount');
-    const heroSubtitleEl = document.getElementById('heroSubtitle');
+    const heroTitleEl = $('heroTitle');
+    const heroAmountEl = $('heroAmount');
+    const heroSubtitleEl = $('heroSubtitle');
 
-    heroTitleEl.textContent = selected ? selected.name : 'Накопления';
+    if (heroTitleEl) heroTitleEl.textContent = selected ? selected.name : 'Накопления';
+    if (heroAmountEl) {
+        if (payHidden) heroAmountEl.textContent = '••••••';
+        else heroAmountEl.textContent = formatMoney(selected ? (selected.balance || 0) : 0);
+    }
+    if (heroSubtitleEl) {
+        if (selected) heroSubtitleEl.textContent = formatPercent(selected.percent) + ' от ЗП';
+        else heroSubtitleEl.textContent = 'Нет выбранного накопления';
+    }
 
-    if (payHidden) heroAmountEl.textContent = '••••••';
-    else heroAmountEl.textContent = formatMoney(selected ? (selected.balance || 0) : 0);
-
-    if (selected) heroSubtitleEl.textContent = formatPercent(selected.percent) + ' от ЗП';
-    else heroSubtitleEl.textContent = 'Нет выбранного накопления';
-
-    const list = document.getElementById('savingsList');
+    const list = $('savingsList');
+    if (!list) return;
     list.innerHTML = '';
     if (state.savings.length === 0) {
         list.innerHTML = '<div class="empty-state">Нет накоплений.<br>Нажми +, чтобы создать первое.</div>';
@@ -1455,19 +1503,20 @@ function renderSavings() {
 }
 
 function renderHistory() {
-    const list = document.getElementById('historyList');
-    const filterEl = document.getElementById('historyFilter');
-    const titleEl = document.getElementById('historyTitle');
+    const list = $('historyList');
+    const filterEl = $('historyFilter');
+    const titleEl = $('historyTitle');
+    if (!list) return;
     list.innerHTML = '';
     let ops = savingsState.operations.slice();
     if (historyFilterMode === 'selected' && selectedSavingsId) {
         ops = ops.filter(o => o.savingsId === selectedSavingsId);
         const sel = getSelectedSavings();
-        titleEl.textContent = sel ? ('История · ' + sel.name) : 'История';
-        filterEl.textContent = 'Все';
+        if (titleEl) titleEl.textContent = sel ? ('История · ' + sel.name) : 'История';
+        if (filterEl) filterEl.textContent = 'Все';
     } else {
-        titleEl.textContent = 'История · все';
-        filterEl.textContent = 'Выбранное';
+        if (titleEl) titleEl.textContent = 'История · все';
+        if (filterEl) filterEl.textContent = 'Выбранное';
     }
     ops.sort((a, b) => (b.date || 0) - (a.date || 0));
     if (ops.length === 0) { list.innerHTML = '<div class="empty-state">Пока пусто</div>'; return; }
@@ -1496,37 +1545,45 @@ function renderHistory() {
     });
 }
 
-document.getElementById('historyFilter').addEventListener('click', () => {
-    historyFilterMode = historyFilterMode === 'selected' ? 'all' : 'selected';
-    renderHistory();
-});
-document.getElementById('savingsList').addEventListener('click', (e) => {
-    const editBtn = e.target.closest('[data-edit]');
-    if (editBtn) {
-        e.stopPropagation();
-        openSavingsSheet(editBtn.dataset.edit);
-        return;
-    }
-    const item = e.target.closest('.tx-item');
-    if (!item) return;
-    selectedSavingsId = item.dataset.id;
-    renderSavings();
-});
+if ($('historyFilter')) {
+    $('historyFilter').addEventListener('click', () => {
+        historyFilterMode = historyFilterMode === 'selected' ? 'all' : 'selected';
+        renderHistory();
+    });
+}
+if ($('savingsList')) {
+    $('savingsList').addEventListener('click', (e) => {
+        const editBtn = e.target.closest('[data-edit]');
+        if (editBtn) {
+            e.stopPropagation();
+            openSavingsSheet(editBtn.dataset.edit);
+            return;
+        }
+        const item = e.target.closest('.tx-item');
+        if (!item) return;
+        selectedSavingsId = item.dataset.id;
+        renderSavings();
+    });
+}
 
-document.getElementById('payEyeBtn').addEventListener('click', () => {
-    payHidden = !payHidden;
-    const icon = document.getElementById('payEyeIcon');
-    if (payHidden) icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
-    else icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
-    renderSavings();
-});
+if ($('payEyeBtn')) {
+    $('payEyeBtn').addEventListener('click', () => {
+        payHidden = !payHidden;
+        const icon = $('payEyeIcon');
+        if (icon) {
+            if (payHidden) icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+            else icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+        }
+        renderSavings();
+    });
+}
 
-const savingsSheet = document.getElementById('savingsSheet');
-const savingsTitle = document.getElementById('savingsTitle');
-const savingsNameInput = document.getElementById('savingsNameInput');
-const savingsPercentInput = document.getElementById('savingsPercentInput');
-const pctSummaryValue = document.getElementById('pctSummaryValue');
-const savingsDeleteBtn = document.getElementById('savingsDeleteBtn');
+const savingsSheet = $('savingsSheet');
+const savingsTitle = $('savingsTitle');
+const savingsNameInput = $('savingsNameInput');
+const savingsPercentInput = $('savingsPercentInput');
+const pctSummaryValue = $('pctSummaryValue');
+const savingsDeleteBtn = $('savingsDeleteBtn');
 let editingSavingsId = null;
 
 function openSavingsSheet(id) {
@@ -1534,27 +1591,28 @@ function openSavingsSheet(id) {
     if (id) {
         const s = savingsState.savings.find(x => x.id === id);
         if (!s) return;
-        savingsTitle.textContent = 'Редактировать';
-        savingsNameInput.value = s.name || '';
-        savingsPercentInput.value = s.percent || 0;
-        savingsDeleteBtn.style.display = 'block';
+        if (savingsTitle) savingsTitle.textContent = 'Редактировать';
+        if (savingsNameInput) savingsNameInput.value = s.name || '';
+        if (savingsPercentInput) savingsPercentInput.value = s.percent || 0;
+        if (savingsDeleteBtn) savingsDeleteBtn.style.display = 'block';
     } else {
         if (savingsState.savings.length >= MAX_SAVINGS) {
             notifyWarn('Лимит', 'Максимум ' + MAX_SAVINGS + ' накоплений');
             return;
         }
-        savingsTitle.textContent = 'Новое накопление';
-        savingsNameInput.value = '';
-        savingsPercentInput.value = 0;
-        savingsDeleteBtn.style.display = 'none';
+        if (savingsTitle) savingsTitle.textContent = 'Новое накопление';
+        if (savingsNameInput) savingsNameInput.value = '';
+        if (savingsPercentInput) savingsPercentInput.value = 0;
+        if (savingsDeleteBtn) savingsDeleteBtn.style.display = 'none';
     }
     updatePctSummary();
-    overlay.classList.add('open');
-    savingsSheet.classList.add('open');
-    setTimeout(() => savingsNameInput.focus(), 300);
+    if (overlay) overlay.classList.add('open');
+    if (savingsSheet) savingsSheet.classList.add('open');
+    setTimeout(() => { if (savingsNameInput) savingsNameInput.focus(); }, 300);
 }
 
 function updatePctSummary() {
+    if (!savingsPercentInput || !pctSummaryValue) return;
     const val = parseInt(savingsPercentInput.value) || 0;
     const total = getTotalPercent(editingSavingsId) + val;
     pctSummaryValue.textContent = formatPercent(total);
@@ -1565,54 +1623,58 @@ function updatePctSummary() {
     else pctSummaryValue.classList.add('ok');
 }
 
-savingsPercentInput.addEventListener('input', updatePctSummary);
-document.getElementById('createSavingsBtn').addEventListener('click', () => openSavingsSheet(null));
-document.getElementById('heroPlus').addEventListener('click', () => openSavingsSheet(null));
-document.getElementById('savingsCancelBtn').addEventListener('click', closeSheet);
+if (savingsPercentInput) savingsPercentInput.addEventListener('input', updatePctSummary);
+if ($('createSavingsBtn')) $('createSavingsBtn').addEventListener('click', () => openSavingsSheet(null));
+if ($('heroPlus')) $('heroPlus').addEventListener('click', () => openSavingsSheet(null));
+if ($('savingsCancelBtn')) $('savingsCancelBtn').addEventListener('click', closeSheet);
 
-document.getElementById('savingsSaveBtn').addEventListener('click', () => {
-    const name = (savingsNameInput.value || '').trim();
-    const percent = Math.max(0, parseInt(savingsPercentInput.value) || 0);
-    if (!name) { notifyWarn('Ошибка', 'Введи название'); return; }
-    if (percent <= 0) { notifyWarn('Ошибка', 'Процент должен быть больше 0'); return; }
-    if (percent > 100) { notifyWarn('Ошибка', 'Процент не может быть больше 100'); return; }
-    const total = getTotalPercent(editingSavingsId) + percent;
-    if (total > 100) {
-        notifyError('Превышение', 'Сумма процентов не может превышать 100%. Сейчас: ' + formatPercent(total));
-        return;
-    }
-    if (editingSavingsId) {
-        const s = savingsState.savings.find(x => x.id === editingSavingsId);
-        if (s) { s.name = name; s.percent = percent; }
-    } else {
-        const color = SAVINGS_COLORS[savingsState.savings.length % SAVINGS_COLORS.length];
-        const s = { id: uid(), name, percent, balance: 0, color };
-        savingsState.savings.push(s);
-        if (!selectedSavingsId) selectedSavingsId = s.id;
-    }
-    persistSavings(savingsState);
-    closeSheet();
-    renderSavings();
-    notifySuccess('Сохранено', editingSavingsId ? 'Накопление обновлено' : 'Накопление создано');
-});
-
-document.getElementById('savingsDeleteBtn').addEventListener('click', () => {
-    if (!editingSavingsId) return;
-    confirmDialog('Удалить накопление?', 'Все его операции тоже удалятся.', () => {
-        savingsState.savings = savingsState.savings.filter(x => x.id !== editingSavingsId);
-        savingsState.operations = savingsState.operations.filter(x => x.savingsId !== editingSavingsId);
-        if (selectedSavingsId === editingSavingsId) selectedSavingsId = savingsState.savings.length > 0 ? savingsState.savings[0].id : null;
+if ($('savingsSaveBtn')) {
+    $('savingsSaveBtn').addEventListener('click', () => {
+        const name = (savingsNameInput.value || '').trim();
+        const percent = Math.max(0, parseInt(savingsPercentInput.value) || 0);
+        if (!name) { notifyWarn('Ошибка', 'Введи название'); return; }
+        if (percent <= 0) { notifyWarn('Ошибка', 'Процент должен быть больше 0'); return; }
+        if (percent > 100) { notifyWarn('Ошибка', 'Процент не может быть больше 100'); return; }
+        const total = getTotalPercent(editingSavingsId) + percent;
+        if (total > 100) {
+            notifyError('Превышение', 'Сумма процентов не может превышать 100%. Сейчас: ' + formatPercent(total));
+            return;
+        }
+        if (editingSavingsId) {
+            const s = savingsState.savings.find(x => x.id === editingSavingsId);
+            if (s) { s.name = name; s.percent = percent; }
+        } else {
+            const color = SAVINGS_COLORS[savingsState.savings.length % SAVINGS_COLORS.length];
+            const s = { id: uid(), name, percent, balance: 0, color };
+            savingsState.savings.push(s);
+            if (!selectedSavingsId) selectedSavingsId = s.id;
+        }
         persistSavings(savingsState);
         closeSheet();
         renderSavings();
-        notifySuccess('Удалено', 'Накопление удалено');
-    }, { confirmLabel: 'Удалить', confirmVariant: 'danger' });
-});
+        notifySuccess('Сохранено', editingSavingsId ? 'Накопление обновлено' : 'Накопление создано');
+    });
+}
+
+if ($('savingsDeleteBtn')) {
+    $('savingsDeleteBtn').addEventListener('click', () => {
+        if (!editingSavingsId) return;
+        confirmDialog('Удалить накопление?', 'Все его операции тоже удалятся.', () => {
+            savingsState.savings = savingsState.savings.filter(x => x.id !== editingSavingsId);
+            savingsState.operations = savingsState.operations.filter(x => x.savingsId !== editingSavingsId);
+            if (selectedSavingsId === editingSavingsId) selectedSavingsId = savingsState.savings.length > 0 ? savingsState.savings[0].id : null;
+            persistSavings(savingsState);
+            closeSheet();
+            renderSavings();
+            notifySuccess('Удалено', 'Накопление удалено');
+        }, { confirmLabel: 'Удалить', confirmVariant: 'danger' });
+    });
+}
 
 /* ВНЕСТИ */
-const moneySheet = document.getElementById('moneySheet');
-const moneyAmountInput = document.getElementById('moneyAmountInput');
-const moneyHint = document.getElementById('moneyHint');
+const moneySheet = $('moneySheet');
+const moneyAmountInput = $('moneyAmountInput');
+const moneyHint = $('moneyHint');
 let opType = 'Оклад';
 
 function openMoneySheet() {
@@ -1622,14 +1684,15 @@ function openMoneySheet() {
     }
     opType = 'Оклад';
     document.querySelectorAll('.op-type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === 'Оклад'));
-    moneyAmountInput.value = 0;
+    if (moneyAmountInput) moneyAmountInput.value = 0;
     updateMoneyHint();
-    overlay.classList.add('open');
-    moneySheet.classList.add('open');
-    setTimeout(() => moneyAmountInput.focus(), 300);
+    if (overlay) overlay.classList.add('open');
+    if (moneySheet) moneySheet.classList.add('open');
+    setTimeout(() => { if (moneyAmountInput) moneyAmountInput.focus(); }, 300);
 }
 
 function updateMoneyHint() {
+    if (!moneyAmountInput || !moneyHint) return;
     const amount = Math.max(0, parseFloat(moneyAmountInput.value) || 0);
     const totalPct = savingsState.savings.reduce((s, x) => s + (x.percent || 0), 0);
     if (totalPct === 0) {
@@ -1648,7 +1711,7 @@ function updateMoneyHint() {
     }
 }
 
-moneyAmountInput.addEventListener('input', updateMoneyHint);
+if (moneyAmountInput) moneyAmountInput.addEventListener('input', updateMoneyHint);
 document.querySelectorAll('.op-type-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         opType = btn.dataset.type;
@@ -1656,56 +1719,52 @@ document.querySelectorAll('.op-type-btn').forEach(btn => {
         btn.classList.add('active');
     });
 });
-document.querySelectorAll('[data-money]').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const add = parseFloat(btn.dataset.money) || 0;
-        moneyAmountInput.value = (parseFloat(moneyAmountInput.value) || 0) + add;
-        updateMoneyHint();
-    });
-});
 
-document.getElementById('addMoneyBtn').addEventListener('click', openMoneySheet);
-document.getElementById('moneyCancelBtn').addEventListener('click', closeSheet);
+if ($('addMoneyBtn')) $('addMoneyBtn').addEventListener('click', openMoneySheet);
+if ($('moneyCancelBtn')) $('moneyCancelBtn').addEventListener('click', closeSheet);
 
-document.getElementById('moneySaveBtn').addEventListener('click', () => {
-    const amount = Math.max(0, parseFloat(moneyAmountInput.value) || 0);
-    if (amount <= 0) { notifyWarn('Ошибка', 'Введи сумму больше 0'); return; }
-    const totalPct = savingsState.savings.reduce((s, x) => s + (x.percent || 0), 0);
-    if (totalPct === 0) { notifyWarn('Ошибка', 'Нет накоплений с процентами'); return; }
-    const now = Date.now();
-    savingsState.savings.forEach(s => {
-        const share = amount * (s.percent / 100);
-        if (share > 0) {
-            s.balance = (s.balance || 0) + share;
-            savingsState.operations.push({ id: uid(), savingsId: s.id, type: opType, amount: share, date: now, kind: 'plus' });
-        }
+if ($('moneySaveBtn')) {
+    $('moneySaveBtn').addEventListener('click', () => {
+        const amount = Math.max(0, parseFloat(moneyAmountInput.value) || 0);
+        if (amount <= 0) { notifyWarn('Ошибка', 'Введи сумму больше 0'); return; }
+        const totalPct = savingsState.savings.reduce((s, x) => s + (x.percent || 0), 0);
+        if (totalPct === 0) { notifyWarn('Ошибка', 'Нет накоплений с процентами'); return; }
+        const now = Date.now();
+        savingsState.savings.forEach(s => {
+            const share = amount * (s.percent / 100);
+            if (share > 0) {
+                s.balance = (s.balance || 0) + share;
+                savingsState.operations.push({ id: uid(), savingsId: s.id, type: opType, amount: share, date: now, kind: 'plus' });
+            }
+        });
+        persistSavings(savingsState);
+        closeSheet();
+        renderSavings();
+        notifySuccess('Зачислено', opType + ' распределён по накоплениям');
     });
-    persistSavings(savingsState);
-    closeSheet();
-    renderSavings();
-    notifySuccess('Зачислено', opType + ' распределён по накоплениям');
-});
+}
 
 /* ЗАБРАТЬ */
-const takeSheet = document.getElementById('takeSheet');
-const takeAmountInput = document.getElementById('takeAmountInput');
-const takeHint = document.getElementById('takeHint');
-const takeTitle = document.getElementById('takeTitle');
-const takeSubtitle = document.getElementById('takeSubtitle');
+const takeSheet = $('takeSheet');
+const takeAmountInput = $('takeAmountInput');
+const takeHint = $('takeHint');
+const takeTitle = $('takeTitle');
+const takeSubtitle = $('takeSubtitle');
 
 function openTakeSheet() {
     const s = getSelectedSavings();
     if (!s) { notifyWarn('Нет накопления', 'Выбери накопление'); return; }
-    takeTitle.textContent = 'Забрать из накопления';
-    takeSubtitle.textContent = s.name + ' · Доступно: ' + formatMoney(s.balance || 0);
-    takeAmountInput.value = 0;
+    if (takeTitle) takeTitle.textContent = 'Забрать из накопления';
+    if (takeSubtitle) takeSubtitle.textContent = s.name + ' · Доступно: ' + formatMoney(s.balance || 0);
+    if (takeAmountInput) takeAmountInput.value = 0;
     updateTakeHint();
-    overlay.classList.add('open');
-    takeSheet.classList.add('open');
-    setTimeout(() => takeAmountInput.focus(), 300);
+    if (overlay) overlay.classList.add('open');
+    if (takeSheet) takeSheet.classList.add('open');
+    setTimeout(() => { if (takeAmountInput) takeAmountInput.focus(); }, 300);
 }
 
 function updateTakeHint() {
+    if (!takeAmountInput || !takeHint) return;
     const s = getSelectedSavings();
     if (!s) return;
     const amount = Math.max(0, parseFloat(takeAmountInput.value) || 0);
@@ -1719,71 +1778,64 @@ function updateTakeHint() {
     }
 }
 
-takeAmountInput.addEventListener('input', updateTakeHint);
-document.querySelectorAll('[data-take]').forEach(btn => {
-    btn.addEventListener('click', () => {
+if (takeAmountInput) takeAmountInput.addEventListener('input', updateTakeHint);
+if ($('heroMinus')) $('heroMinus').addEventListener('click', openTakeSheet);
+if ($('takeCancelBtn')) $('takeCancelBtn').addEventListener('click', closeSheet);
+
+if ($('takeSaveBtn')) {
+    $('takeSaveBtn').addEventListener('click', () => {
         const s = getSelectedSavings();
         if (!s) return;
-        const val = btn.dataset.take;
-        if (val === 'all') takeAmountInput.value = s.balance || 0;
-        else takeAmountInput.value = (parseFloat(takeAmountInput.value) || 0) + (parseFloat(val) || 0);
-        updateTakeHint();
+        const amount = Math.max(0, parseFloat(takeAmountInput.value) || 0);
+        if (amount <= 0) { notifyWarn('Ошибка', 'Введи сумму больше 0'); return; }
+        if (amount > (s.balance || 0)) { notifyError('Недостаточно', 'На балансе меньше денег'); return; }
+        s.balance = (s.balance || 0) - amount;
+        savingsState.operations.push({ id: uid(), savingsId: s.id, type: 'Снятие', amount: amount, date: Date.now(), kind: 'minus' });
+        persistSavings(savingsState);
+        closeSheet();
+        renderSavings();
+        notifySuccess('Списано', formatMoney(amount) + ' из «' + s.name + '»');
     });
-});
-
-document.getElementById('heroMinus').addEventListener('click', openTakeSheet);
-document.getElementById('takeCancelBtn').addEventListener('click', closeSheet);
-
-document.getElementById('takeSaveBtn').addEventListener('click', () => {
-    const s = getSelectedSavings();
-    if (!s) return;
-    const amount = Math.max(0, parseFloat(takeAmountInput.value) || 0);
-    if (amount <= 0) { notifyWarn('Ошибка', 'Введи сумму больше 0'); return; }
-    if (amount > (s.balance || 0)) { notifyError('Недостаточно', 'На балансе меньше денег'); return; }
-    s.balance = (s.balance || 0) - amount;
-    savingsState.operations.push({ id: uid(), savingsId: s.id, type: 'Снятие', amount: amount, date: Date.now(), kind: 'minus' });
-    persistSavings(savingsState);
-    closeSheet();
-    renderSavings();
-    notifySuccess('Списано', formatMoney(amount) + ' из «' + s.name + '»');
-});
+}
 
 /* ОЧИСТКА */
-document.getElementById('clearAllBtn').addEventListener('click', () => {
-    const totalSavings = savingsState.savings.length;
-    const totalOps = savingsState.operations.length;
-    if (totalSavings === 0 && totalOps === 0) {
-        notifyWarn('Нечего удалять', 'Накоплений и истории нет');
-        return;
-    }
-    confirmDialog('Удалить всё?', 'Все накопления, балансы и история будут безвозвратно удалены. Это действие нельзя отменить.', () => {
-        savingsState.savings = [];
-        savingsState.operations = [];
-        selectedSavingsId = null;
-        historyFilterMode = 'selected';
-        persistSavings(savingsState);
-        renderSavings();
-        notifySuccess('Очищено', 'Все накопления и история удалены');
-    }, { confirmLabel: 'Удалить всё', confirmVariant: 'danger' });
-});
+if ($('clearAllBtn')) {
+    $('clearAllBtn').addEventListener('click', () => {
+        const totalSavings = savingsState.savings.length;
+        const totalOps = savingsState.operations.length;
+        if (totalSavings === 0 && totalOps === 0) {
+            notifyWarn('Нечего удалять', 'Накоплений и истории нет');
+            return;
+        }
+        confirmDialog('Удалить всё?', 'Все накопления, балансы и история будут безвозвратно удалены. Это действие нельзя отменить.', () => {
+            savingsState.savings = [];
+            savingsState.operations = [];
+            selectedSavingsId = null;
+            historyFilterMode = 'selected';
+            persistSavings(savingsState);
+            renderSavings();
+            notifySuccess('Очищено', 'Все накопления и история удалены');
+        }, { confirmLabel: 'Удалить всё', confirmVariant: 'danger' });
+    });
+}
 
-overlay.addEventListener('click', closeSheet);
+if (overlay) overlay.addEventListener('click', closeSheet);
 
 /* =========================================================
    СТАРТ
    ========================================================= */
-window.addEventListener('DOMContentLoaded', () => {
-    try { renderHome(); } catch(e) { console.error('renderHome init fail', e); }
-    try { renderSavings(); } catch(e) { console.error('renderSavings init fail', e); }
-    if (selectedSavingsId && !savingsState.savings.find(s => s.id === selectedSavingsId)) {
-        selectedSavingsId = savingsState.savings.length > 0 ? savingsState.savings[0].id : null;
-    }
-    console.log('[job] init', {
-        savings: savingsState.savings.length,
-        operations: savingsState.operations.length,
-        selected: selectedSavingsId,
-        viewDate: viewDateKey
-    });
+try { renderHome(); } catch(e) { console.error('renderHome init fail', e); }
+try { renderSavings(); } catch(e) { console.error('renderSavings init fail', e); }
+
+if (selectedSavingsId && !savingsState.savings.find(s => s.id === selectedSavingsId)) {
+    selectedSavingsId = savingsState.savings.length > 0 ? savingsState.savings[0].id : null;
+}
+
+console.log('[job] init', {
+    savings: savingsState.savings.length,
+    operations: savingsState.operations.length,
+    selected: selectedSavingsId,
+    viewDate: viewDateKey
 });
 
 window.addEventListener('error', (e) => { console.error('[job] Global error:', e.message); });
