@@ -110,7 +110,9 @@ body {
     margin-bottom: 16px; min-height: 44px;
 }
 .cal-title-wrap { flex: 1; padding: 0 8px; min-width: 0; }
+.week-title-wrap { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
 .week-title { font-size: 16px; font-weight: 600; color: #ffffff; cursor: pointer; }
+.week-goal { font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, 0.35); font-variant-numeric: tabular-nums; letter-spacing: -0.2px; white-space: nowrap; }
 .cal-month {
     font-size: 13px; font-weight: 500; color: #8e8e93;
     margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -528,7 +530,10 @@ body {
                 <div class="calendar-header">
                     <div class="cal-nav" id="calPrev" style="display:none;"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
                     <div class="cal-title-wrap">
-                        <div class="week-title" id="calTitle">Неделя</div>
+                        <div class="week-title-wrap">
+                            <span class="week-title" id="calTitle">Неделя</span>
+                            <span class="week-goal" id="calGoalBadge"></span>
+                        </div>
                         <div class="cal-month" id="calMonth"></div>
                     </div>
                     <div class="cal-avg-wrap">
@@ -891,6 +896,37 @@ function getTodayKey() { return dateKey(new Date()); }
 function isWeekend(d) { const g = d.getDay(); return g === 0 || g === 6; }
 function parseKey(key) { try { const p = String(key).split('-').map(Number); if (p.length !== 3 || p.some(n => !isFinite(n))) return new Date(); return new Date(p[0], p[1] - 1, p[2]); } catch(e) { return new Date(); } }
 
+/* ЦЕЛЬ НА ДЕНЬ ПО СТРОКАМ:
+   goalLines / 22, округление до десятков:
+   - если последняя цифра 0-4 → вниз до десятка
+   - если последняя цифра 5-9 → вверх до следующего десятка
+   Пример: 7000/22 = 318.18 → 320 (8 ≥ 5 → вверх)
+   Пример: 5000/22 = 227.27 → 230 (7 ≥ 5 → вверх)
+   Пример: 4000/22 = 181.81 → 180 (1 < 5 → вниз) */
+function calcDailyLinesGoal() {
+    const goal = Number(GOAL_LINES()) || 0;
+    if (goal <= 0) return 0;
+    const raw = goal / WORK_DAYS();
+    const tens = Math.floor(raw / 10);
+    const remainder = raw - tens * 10;
+    if (remainder >= 5) return (tens + 1) * 10;
+    return tens * 10;
+}
+
+/* Обновить бейдж дневной цели в календаре */
+function updateCalGoalBadge() {
+    const badge = $('calGoalBadge');
+    if (!badge) return;
+    const dailyGoal = calcDailyLinesGoal();
+    if (dailyGoal > 0) {
+        badge.style.display = '';
+        badge.textContent = '× ' + dailyGoal;
+    } else {
+        badge.style.display = 'none';
+        badge.textContent = '';
+    }
+}
+
 /* ЗАКРЫТЫЕ МЕСЯЦЫ */
 function loadClosedMonths() {
     const raw = safeGet(CLOSED_MONTHS_KEY, null);
@@ -969,7 +1005,6 @@ function calcMonthStatsForYearMonth(y, m) {
         }
     });
 
-    /* Премия за машины: только сверх нормы (workDays) */
     const machinesOver = Math.max(0, totalMachines - workDays);
     const bonusMachinesSum = machinesOver * MACHINE_BONUS() * (1 - TAX());
 
@@ -989,13 +1024,11 @@ function calcMonthStatsForYearMonth(y, m) {
     };
 }
 
-/* Текущий месяц */
 function calcMonthStats() {
     const now = new Date();
     return calcMonthStatsForYearMonth(now.getFullYear(), now.getMonth());
 }
 
-/* Ключ месяца YYYY-MM */
 function monthKey(y, m) { return y + '-' + String(m + 1).padStart(2, '0'); }
 
 function progressClass(percent) {
@@ -1010,7 +1043,6 @@ function checkMonthClosure() {
     const now = new Date();
     const currentKey = monthKey(now.getFullYear(), now.getMonth());
 
-    /* Найти все месяцы, в которых есть данные */
     const data = loadData();
     const monthsWithData = new Set();
     Object.keys(data).forEach(key => {
@@ -1018,7 +1050,6 @@ function checkMonthClosure() {
         if (p.length >= 2) monthsWithData.add(p[0] + '-' + p[1]);
     });
 
-    /* Закрыть все прошедшие месяцы, которые ещё не закрыты и в которых есть данные */
     monthsWithData.forEach(mk => {
         if (mk === currentKey) return;
         if (closedMonths[mk]) return;
@@ -1045,13 +1076,11 @@ function checkMonthClosure() {
     persistClosedMonths(closedMonths);
 }
 
-/* Показать уведомление о закрытии последнего месяца */
 function showClosureNotificationIfNeeded() {
     const lastOpened = safeGet(LAST_OPENED_KEY, null);
     const now = new Date();
     const currentKey = monthKey(now.getFullYear(), now.getMonth());
 
-    /* Если последний раз открывали в другом месяце — показать уведомление о закрытии */
     if (lastOpened && lastOpened !== currentKey && closedMonths[lastOpened]) {
         const c = closedMonths[lastOpened];
         const parts = lastOpened.split('-').map(Number);
@@ -1101,7 +1130,6 @@ function renderHome() {
             else di.textContent = formatMoney(calcDayIncome(view));
         }
 
-        /* Премия за месяц — по варианту B */
         const b = $('bonus');
         const bh = $('bonusHint');
         const month = calcMonthStats();
@@ -1109,11 +1137,9 @@ function renderHome() {
         const currentKey = monthKey(now.getFullYear(), now.getMonth());
 
         if (closedMonths[currentKey]) {
-            /* Месяц закрыт — показываем полную премию */
             if (b) b.textContent = formatMoney(closedMonths[currentKey].bonusNet);
             if (bh) bh.textContent = 'Месяц закрыт';
         } else {
-            /* Текущий месяц — показываем премию за строки + прогноз за машины */
             if (b) b.textContent = formatMoney(month.bonusLinesNet);
             if (bh) {
                 if (month.machinesOver > 0) {
@@ -1124,13 +1150,11 @@ function renderHome() {
             }
         }
 
-        /* Зарплата за месяц */
         const s = $('salary');
         if (s) {
             if (closedMonths[currentKey]) {
                 s.textContent = formatMoney(closedMonths[currentKey].total);
             } else {
-                /* Текущий — оклад за отработанные дни + премия за строки */
                 const salaryNow = SALARY_PER_DAY() * month.workDays;
                 s.textContent = formatMoney(salaryNow + month.bonusLinesNet);
             }
@@ -1196,6 +1220,10 @@ function calcMonthAverage(data, y, m) {
 
 function renderWeek(data) {
     if (!data) data = loadData();
+
+    /* Обновляем бейдж дневной цели */
+    updateCalGoalBadge();
+
     const now = new Date();
     const todayKey = dateKey(now);
     const monday = new Date(now);
@@ -1262,6 +1290,9 @@ function renderMonth(date) {
     const cm = $('calMonth');
     if (cm) cm.textContent = MONTHS_RU[date.getMonth()] + ' ' + date.getFullYear();
 
+    /* Обновляем бейдж дневной цели */
+    updateCalGoalBadge();
+
     const data = loadData();
     const y = date.getFullYear();
     const m = date.getMonth();
@@ -1316,6 +1347,7 @@ function expandCalendar() {
     const t = $('calTitle'); if (t) t.textContent = 'Календарь';
     const p = $('calPrev'); if (p) p.style.display = 'flex';
     const n = $('calNext'); if (n) n.style.display = 'flex';
+    updateCalGoalBadge();
     renderMonth(currentMonth);
 }
 
@@ -1565,7 +1597,6 @@ function renderStats() {
     if (!list) return;
     list.innerHTML = '';
 
-    /* Если открыт конкретный месяц — показать карточку */
     if (statsOpenedMonthKey) {
         const parts = statsOpenedMonthKey.split('-').map(Number);
         const y = parts[0], m = parts[1] - 1;
@@ -1598,7 +1629,6 @@ function renderStats() {
         return;
     }
 
-    /* Список месяцев с данными */
     const data = loadData();
     const monthsWithData = new Set();
     Object.keys(data).forEach(key => {
@@ -1914,6 +1944,8 @@ try {
         persistSettings(settings);
         closeSheet();
         renderGoals();
+        renderWeek(loadData());
+        updateCalGoalBadge();
         notifySuccess('Сохранено', 'Цель обновлена');
     });
 } catch(e) {}
