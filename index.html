@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -7,8 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="job">
 <meta name="theme-color" content="#0b1e2b">
-<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%231a3a5c'/><stop offset='1' stop-color='%230a1520'/></linearGradient></defs><rect width='180' height='180' rx='40' fill='url(%23g)'/><text x='90' y='128' font-family='Inter,sans-serif' font-size='110' font-weight='800' fill='white' text-anchor='middle'>J</text></svg>">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%231a3a5c'/><stop offset='1' stop-color='%230a1520'/></linearGradient></defs><rect width='512' height='512' rx='110' fill='url(%23g)'/><text x='256' y='360' font-family='Inter,sans-serif' font-size='320' font-weight='800' fill='white' text-anchor='middle'>J</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23173049'/><stop offset='1' stop-color='%23070d14'/></linearGradient><linearGradient id='s' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23ffffff'/><stop offset='1' stop-color='%2371b8ff'/></linearGradient></defs><rect width='180' height='180' fill='url(%23g)'/><path d='M104 42 V104 a30 30 0 0 1 -30 30 h-6' transform='translate(0 -2)' fill='none' stroke='url(%23s)' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23173049'/><stop offset='1' stop-color='%23070d14'/></linearGradient><linearGradient id='s' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23ffffff'/><stop offset='1' stop-color='%2371b8ff'/></linearGradient></defs><rect width='180' height='180' rx='40' fill='url(%23g)'/><path d='M104 42 V104 a30 30 0 0 1 -30 30 h-6' transform='translate(0 -2)' fill='none' stroke='url(%23s)' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -474,6 +475,27 @@ body {
     font-size: 22px;
     letter-spacing: -0.5px;
 }
+
+/* Точка «норма машин выполнена» */
+.day-dot.mach-ok::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #30d158;
+    border: 2px solid #1c1c1e;
+    box-sizing: border-box;
+}
+
+.cal-workdays {
+    font-size: 12px;
+    font-weight: 600;
+    color: #8e8e93;
+    margin-top: 3px;
+    font-variant-numeric: tabular-nums;
+}
+.cal-workdays b { color: #ffffff; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -535,6 +557,7 @@ body {
                             <span class="week-goal" id="calGoalBadge"></span>
                         </div>
                         <div class="cal-month" id="calMonth"></div>
+                        <div class="cal-workdays" id="calWorkdays"></div>
                     </div>
                     <div class="cal-avg-wrap">
                         <div class="cal-avg" id="calAvg"></div>
@@ -961,19 +984,36 @@ function getTotalPercent(excludeId) { return savingsState.savings.filter(s => s.
 function getSelectedSavings() { if (!selectedSavingsId) return null; return savingsState.savings.find(s => s.id === selectedSavingsId) || null; }
 
 /* РАСЧЁТЫ */
+const MACHINES_DOT_NORM = 2; // норма машин для зелёной точки
+
+/* Цвет дня зависит только от строк:
+   красный → оранжевый → жёлтый → зелёный (≥ нормы строк) */
 function getDayStatus(entry) {
     if (!entry || !entry.worked) return 'gray';
     const lines = Number(entry.lines) || 0;
     const machines = Number(entry.machines) || 0;
-    const nL = NORM_LINES(), nM = NORM_MACHINES();
-    if (lines >= nL && machines >= nM) {
-        if (lines >= nL * 1.3 && machines >= nM * 2) return 'purple';
-        if (lines >= nL * 1.15 && machines >= nM * 1.5) return 'blue';
-        return 'green';
-    }
-    if (lines >= nL * 0.7 || machines >= nM * 0.5) return 'yellow';
+    const nL = NORM_LINES();
+    if (lines >= nL) return 'green';
+    if (lines >= nL * 0.7) return 'yellow';
     if (lines > 0 || machines > 0) return 'orange';
     return 'red';
+}
+
+/* Зелёная точка: норма строк + норма машин выполнены */
+function hasMachinesDot(entry) {
+    if (!entry || !entry.worked) return false;
+    const lines = Number(entry.lines) || 0;
+    const machines = Number(entry.machines) || 0;
+    return lines >= NORM_LINES() && machines >= MACHINES_DOT_NORM;
+}
+
+/* Отработано / осталось рабочих дней в календарном заголовке */
+function updateWorkdaysInfo(y, m) {
+    const el = $('calWorkdays');
+    if (!el) return;
+    const worked = calcMonthStatsForYearMonth(y, m).workDays;
+    const left = Math.max(0, WORK_DAYS() - worked);
+    el.innerHTML = 'Отработано <b>' + worked + '</b> · осталось <b>' + left + '</b>';
 }
 
 function calcDayBonus(lines, machines) {
@@ -1122,7 +1162,11 @@ function renderHome() {
         }
 
         try { renderGoals(); } catch(e) { console.warn('renderGoals fail', e); }
-        try { renderWeek(data); } catch(e) { console.warn('renderWeek fail', e); }
+        try {
+            const w = $('calendarWrapper');
+            if (w && w.classList.contains('expanded')) renderMonth(currentMonth);
+            else renderWeek(data);
+        } catch(e) { console.warn('renderCalendar fail', e); }
 
         const di = $('dayIncome');
         if (di) {
@@ -1264,6 +1308,7 @@ function renderWeek(data) {
         dot.className = 'day-dot ' + status;
         if (isToday) dot.classList.add('today-ring');
         if (isViewSelected) dot.classList.add('selected');
+        if (!weekend && hasMachinesDot(entry)) dot.classList.add('mach-ok');
         dot.textContent = d.getDate();
 
         const label = document.createElement('div');
@@ -1284,6 +1329,10 @@ function renderWeek(data) {
             ca.innerHTML = '<b>—</b><span>в среднем</span>';
         }
     }
+
+    /* Отработано / осталось — по месяцу середины недели */
+    const ref = new Date(monday.getTime() + 3 * 86400000);
+    updateWorkdaysInfo(ref.getFullYear(), ref.getMonth());
 }
 
 function renderMonth(date) {
@@ -1326,6 +1375,7 @@ function renderMonth(date) {
         if (isOtherMonth) dot.classList.add('other-month');
         if (isToday) dot.classList.add('today-ring');
         if (isSelected) dot.classList.add('selected');
+        if (!weekend && hasMachinesDot(entry)) dot.classList.add('mach-ok');
         dot.textContent = dayDate.getDate();
         item.appendChild(dot);
         wd.appendChild(item);
@@ -1340,6 +1390,8 @@ function renderMonth(date) {
             ca.innerHTML = '<b>—</b><span>в среднем</span>';
         }
     }
+
+    updateWorkdaysInfo(y, m);
 }
 
 function expandCalendar() {
