@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -8,8 +7,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="job">
 <meta name="theme-color" content="#0b1e2b">
-<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23173049'/><stop offset='1' stop-color='%23070d14'/></linearGradient><linearGradient id='s' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23ffffff'/><stop offset='1' stop-color='%2371b8ff'/></linearGradient></defs><rect width='180' height='180' fill='url(%23g)'/><path d='M104 42 V104 a30 30 0 0 1 -30 30 h-6' transform='translate(0 -2)' fill='none' stroke='url(%23s)' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23173049'/><stop offset='1' stop-color='%23070d14'/></linearGradient><linearGradient id='s' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23ffffff'/><stop offset='1' stop-color='%2371b8ff'/></linearGradient></defs><rect width='180' height='180' rx='40' fill='url(%23g)'/><path d='M104 42 V104 a30 30 0 0 1 -30 30 h-6' transform='translate(0 -2)' fill='none' stroke='url(%23s)' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%23000000'/><path d='M104 42 V104 a30 30 0 0 1 -30 30 h-6' transform='translate(0 -2)' fill='none' stroke='%23ffffff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%23000000'/><path d='M104 42 V104 a30 30 0 0 1 -30 30 h-6' transform='translate(0 -2)' fill='none' stroke='%23ffffff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -476,17 +475,19 @@ body {
     letter-spacing: -0.5px;
 }
 
-/* Точка «норма машин выполнена» */
+/* Точка по машинам: 1 → чёрная, ≥2 → зелёная (независимо от нормы строк) */
+.day-dot.mach-one::after,
 .day-dot.mach-ok::after {
     content: '';
     position: absolute;
     top: 0; right: 0;
     width: 12px; height: 12px;
     border-radius: 50%;
-    background: #30d158;
     border: 2px solid #1c1c1e;
     box-sizing: border-box;
 }
+.day-dot.mach-one::after { background: #000000; }
+.day-dot.mach-ok::after  { background: #30d158; }
 
 .cal-workdays {
     font-size: 12px;
@@ -919,13 +920,7 @@ function getTodayKey() { return dateKey(new Date()); }
 function isWeekend(d) { const g = d.getDay(); return g === 0 || g === 6; }
 function parseKey(key) { try { const p = String(key).split('-').map(Number); if (p.length !== 3 || p.some(n => !isFinite(n))) return new Date(); return new Date(p[0], p[1] - 1, p[2]); } catch(e) { return new Date(); } }
 
-/* ЦЕЛЬ НА ДЕНЬ ПО СТРОКАМ:
-   goalLines / 22, округление до десятков:
-   - если последняя цифра 0-4 → вниз до десятка
-   - если последняя цифра 5-9 → вверх до следующего десятка
-   Пример: 7000/22 = 318.18 → 320 (8 ≥ 5 → вверх)
-   Пример: 5000/22 = 227.27 → 230 (7 ≥ 5 → вверх)
-   Пример: 4000/22 = 181.81 → 180 (1 < 5 → вниз) */
+/* ЦЕЛЬ НА ДЕНЬ ПО СТРОКАМ */
 function calcDailyLinesGoal() {
     const goal = Number(GOAL_LINES()) || 0;
     if (goal <= 0) return 0;
@@ -936,7 +931,6 @@ function calcDailyLinesGoal() {
     return tens * 10;
 }
 
-/* Обновить бейдж дневной цели в календаре */
 function updateCalGoalBadge() {
     const badge = $('calGoalBadge');
     if (!badge) return;
@@ -986,8 +980,7 @@ function getSelectedSavings() { if (!selectedSavingsId) return null; return savi
 /* РАСЧЁТЫ */
 const MACHINES_DOT_NORM = 2; // норма машин для зелёной точки
 
-/* Цвет дня зависит только от строк:
-   красный → оранжевый → жёлтый → зелёный (≥ нормы строк) */
+/* Цвет дня — только по строкам */
 function getDayStatus(entry) {
     if (!entry || !entry.worked) return 'gray';
     const lines = Number(entry.lines) || 0;
@@ -999,20 +992,35 @@ function getDayStatus(entry) {
     return 'red';
 }
 
-/* Зелёная точка: норма строк + норма машин выполнены */
-function hasMachinesDot(entry) {
-    if (!entry || !entry.worked) return false;
-    const lines = Number(entry.lines) || 0;
-    const machines = Number(entry.machines) || 0;
-    return lines >= NORM_LINES() && machines >= MACHINES_DOT_NORM;
+/* Точка по машинам — независимо от строк:
+   1 → чёрная, ≥2 → зелёная */
+function getMachinesDotClass(entry) {
+    if (!entry || !entry.worked) return '';
+    const m = Number(entry.machines) || 0;
+    if (m >= MACHINES_DOT_NORM) return 'mach-ok';
+    if (m === 1) return 'mach-one';
+    return '';
 }
 
-/* Отработано / осталось рабочих дней в календарном заголовке */
+/* Отработано / осталось рабочих дней в текущем месяце */
 function updateWorkdaysInfo(y, m) {
     const el = $('calWorkdays');
     if (!el) return;
+
     const worked = calcMonthStatsForYearMonth(y, m).workDays;
-    const left = Math.max(0, WORK_DAYS() - worked);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const lastDay = new Date(y, m + 1, 0);
+    let left = 0;
+
+    for (let d = new Date(y, m, 1); d <= lastDay; d.setDate(d.getDate() + 1)) {
+        const wd = d.getDay();
+        if (wd === 0 || wd === 6) continue;
+        if (d < today) continue;
+        left++;
+    }
+
     el.innerHTML = 'Отработано <b>' + worked + '</b> · осталось <b>' + left + '</b>';
 }
 
@@ -1027,7 +1035,6 @@ function calcDayBonus(lines, machines) {
 
 function calcDayIncome(entry) { if (!entry || !entry.worked) return 0; return SALARY_PER_DAY() + calcDayBonus(entry.lines || 0, entry.machines || 0); }
 
-/* Статистика за конкретный месяц */
 function calcMonthStatsForYearMonth(y, m) {
     const data = loadData();
     let totalLines = 0, totalMachines = 0, workDays = 0, salarySum = 0, bonusLinesSum = 0;
@@ -1265,7 +1272,6 @@ function calcMonthAverage(data, y, m) {
 function renderWeek(data) {
     if (!data) data = loadData();
 
-    /* Обновляем бейдж дневной цели */
     updateCalGoalBadge();
 
     const now = new Date();
@@ -1308,7 +1314,10 @@ function renderWeek(data) {
         dot.className = 'day-dot ' + status;
         if (isToday) dot.classList.add('today-ring');
         if (isViewSelected) dot.classList.add('selected');
-        if (!weekend && hasMachinesDot(entry)) dot.classList.add('mach-ok');
+        if (!weekend) {
+            const mcls = getMachinesDotClass(entry);
+            if (mcls) dot.classList.add(mcls);
+        }
         dot.textContent = d.getDate();
 
         const label = document.createElement('div');
@@ -1330,7 +1339,6 @@ function renderWeek(data) {
         }
     }
 
-    /* Отработано / осталось — по месяцу середины недели */
     const ref = new Date(monday.getTime() + 3 * 86400000);
     updateWorkdaysInfo(ref.getFullYear(), ref.getMonth());
 }
@@ -1339,7 +1347,6 @@ function renderMonth(date) {
     const cm = $('calMonth');
     if (cm) cm.textContent = MONTHS_RU[date.getMonth()] + ' ' + date.getFullYear();
 
-    /* Обновляем бейдж дневной цели */
     updateCalGoalBadge();
 
     const data = loadData();
@@ -1375,7 +1382,10 @@ function renderMonth(date) {
         if (isOtherMonth) dot.classList.add('other-month');
         if (isToday) dot.classList.add('today-ring');
         if (isSelected) dot.classList.add('selected');
-        if (!weekend && hasMachinesDot(entry)) dot.classList.add('mach-ok');
+        if (!weekend) {
+            const mcls = getMachinesDotClass(entry);
+            if (mcls) dot.classList.add(mcls);
+        }
         dot.textContent = dayDate.getDate();
         item.appendChild(dot);
         wd.appendChild(item);
