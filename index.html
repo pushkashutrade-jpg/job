@@ -498,6 +498,24 @@ body {
     font-variant-numeric: tabular-nums;
 }
 .cal-workdays b { color: #ffffff; font-weight: 700; }
+
+/* Карусель верхней панели + streak */
+.stat-carousel { overflow: hidden; border-radius: 28px; touch-action: pan-y; margin-bottom: 10px; }
+.stat-track { display: flex; will-change: transform; }
+.stat-slide { flex: 0 0 100%; min-width: 0; display: flex; opacity: 0.35; transform: scale(0.94); transition: opacity 0.38s ease, transform 0.38s cubic-bezier(0.32, 0.72, 0, 1); }
+.stat-slide.on { opacity: 1; transform: scale(1); }
+.stat-slide .main-stat-card { width: 100%; margin-bottom: 0; box-shadow: none; }
+.stat-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 14px; }
+.stat-dots span { width: 6px; height: 6px; border-radius: 6px; background: #3a3a3c; transition: width 0.3s ease, background 0.3s ease; cursor: pointer; }
+.stat-dots span.active { width: 16px; background: #ffffff; }
+.streak-card .main-stat-label { max-width: 150px; }
+.streak-flame { display: block; width: 56px; height: 56px; margin-left: auto; transform-origin: 50% 90%; }
+.streak-flame.off { filter: grayscale(1); opacity: 0.45; }
+.streak-flame.on { animation: flicker 1.4s ease-in-out infinite; }
+@keyframes flicker {
+    0%, 100% { transform: scale(1) rotate(-1.5deg); }
+    50% { transform: scale(1.07) rotate(1.5deg); }
+}
 </style>
 </head>
 <body>
@@ -525,18 +543,48 @@ body {
                 </div>
             </div>
 
-            <div class="main-stat-card">
-                <div class="main-stat-header">
-                    <div class="main-stat-left">
-                        <div class="main-stat-number" id="todayLines">0</div>
-                        <div class="main-stat-label">Строк<span id="mainDayLabel">сегодня</span></div>
+            <div class="stat-carousel" id="statCarousel">
+                <div class="stat-track" id="statTrack">
+                    <div class="stat-slide on">
+                        <div class="main-stat-card">
+                            <div class="main-stat-header">
+                                <div class="main-stat-left">
+                                    <div class="main-stat-number" id="todayLines">0</div>
+                                    <div class="main-stat-label">Строк<span id="mainDayLabel">сегодня</span></div>
+                                </div>
+                                <div class="main-stat-right">
+                                    <div class="num" id="todayMachines">0</div>
+                                    <div class="lbl">Машин</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="main-stat-right">
-                        <div class="num" id="todayMachines">0</div>
-                        <div class="lbl">Машин</div>
+                    <div class="stat-slide">
+                        <div class="main-stat-card streak-card">
+                            <div class="main-stat-header">
+                                <div class="main-stat-left">
+                                    <div class="main-stat-number" id="streakNum">0</div>
+                                    <div class="main-stat-label">Дней подряд<span id="streakSub">по строкам</span></div>
+                                </div>
+                                <div class="main-stat-right">
+                                    <svg class="streak-flame off" id="streakFlame" viewBox="0 0 64 64">
+                                        <defs>
+                                            <linearGradient id="flameG" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0" stop-color="#ffd60a"/>
+                                                <stop offset="0.5" stop-color="#ff9500"/>
+                                                <stop offset="1" stop-color="#ff453a"/>
+                                            </linearGradient>
+                                        </defs>
+                                        <path d="M32 4c2 10-6 15-11 23-4 6-5 11-3 17 3 9 11 15 19 14 10-1 17-9 16-20-1-8-6-12-9-17-1 4-3 6-5 7 1-8-2-16-7-24z" fill="url(#flameG)"/>
+                                        <path d="M33 34c-3 5-7 7-6 13 1 5 5 8 9 7 5-1 7-5 6-9-1-4-4-6-5-9-1 2-2 3-4 2z" fill="#ffe08a"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+            <div class="stat-dots" id="statDots"><span class="active"></span><span></span></div>
 
             <div class="goals-row">
                 <div class="goal-panel" id="goalLinesPanel">
@@ -1190,6 +1238,7 @@ function renderHome() {
         }
 
         try { renderGoals(); } catch(e) { console.warn('renderGoals fail', e); }
+        try { renderStreak(); } catch(e) { console.warn('renderStreak fail', e); }
         try {
             const w = $('calendarWrapper');
             if (w && w.classList.contains('expanded')) renderMonth(currentMonth);
@@ -2061,6 +2110,93 @@ try {
   });
 } catch (e) {}
 
+/* STREAK */
+function calcStreak() {
+    const data = loadData();
+    const keys = Object.keys(data).sort();
+    if (!keys.length) return { count: 0, todayDone: false };
+    const firstKey = keys[0];
+    const norm = NORM_LINES();
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    let count = 0, todayDone = false;
+    for (let i = 0; i < 800; i++) {
+        const d = new Date(today); d.setDate(today.getDate() - i);
+        const key = dateKey(d);
+        if (key < firstKey) break;
+        if (isWeekend(d)) continue;
+        const e = data[key];
+        if (e && e.worked === false) continue;
+        const ok = e && e.worked && (Number(e.lines) || 0) >= norm;
+        if (ok) { count++; if (i === 0) todayDone = true; }
+        else if (i === 0) continue;
+        else break;
+    }
+    return { count, todayDone };
+}
+
+function renderStreak() {
+    const s = calcStreak();
+    const n = $('streakNum'); if (n) n.textContent = s.count;
+    const sub = $('streakSub');
+    if (sub) sub.textContent = s.todayDone ? 'сегодня ✓' : (s.count > 0 ? 'сегодня ещё нет' : 'по строкам');
+    const f = $('streakFlame');
+    if (f) {
+        f.classList.toggle('on', s.todayDone);
+        f.classList.toggle('off', !s.todayDone);
+    }
+}
+
+/* СВАЙП ВЕРХНЕЙ ПАНЕЛИ */
+(function setupStatCarousel() {
+    const car = $('statCarousel'), track = $('statTrack');
+    if (!car || !track) return;
+    const slides = track.querySelectorAll('.stat-slide');
+    const dots = document.querySelectorAll('#statDots span');
+    let index = 0, startX = 0, startY = 0, dx = 0, startT = 0, dragging = false, locked = null;
+
+    function setPos(dragPx, animate) {
+        track.style.transition = animate ? 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)' : 'none';
+        track.style.transform = 'translateX(calc(' + (-index * 100) + '% + ' + dragPx + 'px))';
+    }
+    function go(i) {
+        index = Math.max(0, Math.min(slides.length - 1, i));
+        setPos(0, true);
+        slides.forEach((s, k) => s.classList.toggle('on', k === index));
+        dots.forEach((d, k) => d.classList.toggle('active', k === index));
+    }
+
+    car.addEventListener('touchstart', (e) => {
+        const t = e.touches[0];
+        startX = t.clientX; startY = t.clientY; startT = Date.now();
+        dx = 0; dragging = true; locked = null;
+        track.style.transition = 'none';
+    }, { passive: true });
+
+    car.addEventListener('touchmove', (e) => {
+        if (!dragging) return;
+        const t = e.touches[0];
+        const mx = t.clientX - startX, my = t.clientY - startY;
+        if (locked === null && (Math.abs(mx) > 6 || Math.abs(my) > 6)) {
+            locked = Math.abs(mx) > Math.abs(my) ? 'x' : 'y';
+        }
+        if (locked !== 'x') return;
+        dx = mx;
+        const edge = (index === 0 && dx > 0) || (index === slides.length - 1 && dx < 0);
+        setPos(edge ? dx * 0.3 : dx, false);
+    }, { passive: true });
+
+    car.addEventListener('touchend', () => {
+        if (!dragging) return;
+        dragging = false;
+        if (locked !== 'x') { go(index); return; }
+        const v = Math.abs(dx) / Math.max(Date.now() - startT, 1);
+        if (Math.abs(dx) > car.clientWidth * 0.25 || v > 0.4) go(dx < 0 ? index + 1 : index - 1);
+        else go(index);
+    });
+
+    dots.forEach((d, k) => d.addEventListener('click', () => go(k)));
+})();
+
 /* ОБРАБОТЧИКИ */
 try { const b = $('addBtn'); if (b) b.addEventListener('click', openSheetToday); } catch(e) {}
 try { const b = $('statsBtn'); if (b) b.addEventListener('click', () => switchScreen('stats')); } catch(e) {}
@@ -2423,3 +2559,4 @@ window.addEventListener('error', (e) => { console.error('[job] Global error:', e
 
 </body>
 </html>
+
