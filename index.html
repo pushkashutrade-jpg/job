@@ -34,8 +34,9 @@ body {
     min-height: 0;
 }
 @media (max-width: 420px) {
-    body { padding: 0; align-items: stretch; }
+    body { padding: 0; align-items: stretch; height: 100dvh; }
     .app { width: 100%; height: 100dvh; box-shadow: none; }
+    html, body { background: #060b0f; overscroll-behavior: none; }
 }
 
 .screen { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
@@ -515,6 +516,9 @@ body {
                             <line x1="20" y1="20" x2="20" y2="14" />
                         </svg>
                     </button>
+                    <button class="action-btn" id="settingsBtn" aria-label="Настройки">
+                        <svg viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="15" cy="17" r="2"/></svg>
+                    </button>
                     <button class="action-btn" id="addBtn" aria-label="Добавить">
                         <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                     </button>
@@ -619,6 +623,23 @@ body {
                 </div>
             </div>
             <div id="statsList"></div>
+        </div>
+    </div>
+
+    <div class="screen" id="screen-settings">
+        <div class="screen-scroll">
+            <div class="header">
+                <div class="logo">Настройки</div>
+                <div class="header-actions">
+                    <button class="action-btn" id="settingsBackBtn" aria-label="Назад">
+                        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="stats-detail" id="settingsForm"></div>
+            <button class="sheet-btn save" id="settingsSaveBtn" style="width:100%;margin-bottom:10px">Сохранить</button>
+            <button class="sheet-btn cancel" id="exportBtn" style="width:100%;margin-bottom:10px">Скопировать резервную копию</button>
+            <button class="sheet-btn cancel" id="importBtn" style="width:100%;margin-bottom:16px">Восстановить из копии</button>
         </div>
     </div>
 
@@ -885,7 +906,7 @@ function confirmDialog(title, message, onConfirm, opts = {}) {
 }
 
 /* НАСТРОЙКИ */
-const DEFAULT_SETTINGS = { salary: 60000, normLines: 350, normMachines: 1, linePrice: 5, machineBonus: 500, tax: 0.13, goalLines: 7000, goalMachines: 44 };
+const DEFAULT_SETTINGS = { salary: 60000, workDays: 22, normLines: 350, normMachines: 1, linePrice: 5, machineBonus: 500, tax: 0.13, goalLines: 7000, goalMachines: 44 };
 const STORAGE_KEY = 'pushkashuu';
 const SETTINGS_KEY = 'pushkashuu_settings';
 const SAVINGS_KEY = 'pushkashuu_savings_v1';
@@ -897,7 +918,7 @@ let settings = Object.assign({}, DEFAULT_SETTINGS, (rawSettings && typeof rawSet
 function persistSettings(s) { safeSet(SETTINGS_KEY, s); }
 
 function SALARY_NET()      { return settings.salary * (1 - settings.tax); }
-function WORK_DAYS()       { return 22; }
+function WORK_DAYS()       { return Number(settings.workDays) || 22; }
 function SALARY_PER_DAY()  { return SALARY_NET() / WORK_DAYS(); }
 function NORM_LINES()      { return settings.normLines; }
 function NORM_MACHINES()   { return settings.normMachines; }
@@ -1662,7 +1683,7 @@ function renderStats() {
     if (statsOpenedMonthKey) {
         const parts = statsOpenedMonthKey.split('-').map(Number);
         const y = parts[0], m = parts[1] - 1;
-        const stats = calcMonthStatsForYearMonth(y, m);
+        const stats = closedMonths[monthKey(y, m)] || calcMonthStatsForYearMonth(y, m);
 
         const block = document.createElement('div');
         block.className = 'stats-detail';
@@ -1708,7 +1729,7 @@ function renderStats() {
     arr.forEach(mk => {
         const parts = mk.split('-').map(Number);
         const y = parts[0], m = parts[1] - 1;
-        const stats = calcMonthStatsForYearMonth(y, m);
+        const stats = closedMonths[monthKey(y, m)] || calcMonthStatsForYearMonth(y, m);
 
         const item = document.createElement('div');
         item.className = 'stats-month-item';
@@ -1939,7 +1960,7 @@ function updateTakeHint() {
 
 /* ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ */
 function switchScreen(key) {
-    const screens = { home: $('screen-home'), pay: $('screen-pay'), stats: $('screen-stats') };
+    const screens = { home: $('screen-home'), pay: $('screen-pay'), stats: $('screen-stats'), settings: $('screen-settings') };
     if (!screens[key]) return;
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     if (key === 'home' || key === 'pay') {
@@ -1951,6 +1972,7 @@ function switchScreen(key) {
     if (key === 'pay') renderSavings();
     if (key === 'home') renderHome();
     if (key === 'stats') { statsOpenedMonthKey = null; renderStats(); }
+    if (key === 'settings') renderSettings();
 }
 
 /* CONFIRM */
@@ -1965,6 +1987,79 @@ function closeConfirm() {
     const o = $('sheetOverlay'); if (o) o.classList.remove('open');
     const c = $('confirmSheet'); if (c) c.classList.remove('open');
 }
+
+/* НАСТРОЙКИ — ЭКРАН */
+const SETTINGS_FIELDS = [
+  ['salary', 'Оклад (грязный), ₽'],
+  ['normLines', 'Норма строк в день'],
+  ['normMachines', 'Норма машин в день'],
+  ['linePrice', 'Цена строки, ₽'],
+  ['machineBonus', 'Премия за машину сверх нормы, ₽']
+];
+
+function updateSalaryNetHint() {
+  const el = $('salaryNetHint'); if (!el) return;
+  const v = parseFloat(($('set_salary') || {}).value) || 0;
+  el.textContent = 'Чистый оклад (−' + Math.round(TAX() * 100) + '%): ' + formatMoney(v * (1 - TAX()));
+}
+
+function renderSettings() {
+  const f = $('settingsForm'); if (!f) return;
+  f.innerHTML = '';
+  SETTINGS_FIELDS.forEach(([key, label]) => {
+    const row = document.createElement('div');
+    row.className = 'sheet-row';
+    row.innerHTML = '<div class="sheet-label">' + label + '</div>' +
+      '<input class="sheet-input" id="set_' + key + '" type="number" inputmode="decimal" step="any" value="' + settings[key] + '" style="font-size:18px">' +
+      (key === 'salary' ? '<div class="hint" id="salaryNetHint" style="padding:8px 4px 0"></div>' : '');
+    f.appendChild(row);
+  });
+  const si = $('set_salary');
+  if (si) si.addEventListener('input', updateSalaryNetHint);
+  updateSalaryNetHint();
+}
+
+function saveSettingsForm() {
+  const next = Object.assign({}, settings);
+  for (const [key, label] of SETTINGS_FIELDS) {
+    const v = parseFloat(($('set_' + key) || {}).value);
+    if (!isFinite(v) || v < 0) { notifyWarn('Ошибка', 'Проверь поле: ' + label); return; }
+    next[key] = v;
+  }
+  settings = next;
+  persistSettings(settings);
+  renderHome();
+  notifySuccess('Сохранено', 'Настройки обновлены');
+}
+
+try {
+  $('settingsBtn').addEventListener('click', () => switchScreen('settings'));
+  $('settingsBackBtn').addEventListener('click', () => switchScreen('home'));
+  $('settingsSaveBtn').addEventListener('click', saveSettingsForm);
+
+  $('exportBtn').addEventListener('click', async () => {
+    const dump = JSON.stringify({
+      data: loadData(), settings: settings,
+      savings: savingsState, closed: closedMonths
+    });
+    try { await navigator.clipboard.writeText(dump); notifySuccess('Скопировано', 'Вставь в заметки и сохрани'); }
+    catch (e) { prompt('Скопируй копию вручную:', dump); }
+  });
+
+  $('importBtn').addEventListener('click', () => {
+    const txt = prompt('Вставь резервную копию:');
+    if (!txt) return;
+    try {
+      const o = JSON.parse(txt);
+      if (!o || typeof o !== 'object' || !o.data) throw new Error('bad');
+      safeSet(STORAGE_KEY, o.data);
+      if (o.settings) safeSet(SETTINGS_KEY, o.settings);
+      if (o.savings) safeSet(SAVINGS_KEY, o.savings);
+      if (o.closed) safeSet(CLOSED_MONTHS_KEY, o.closed);
+      location.reload();
+    } catch (e) { notifyError('Ошибка', 'Копия не подходит'); }
+  });
+} catch (e) {}
 
 /* ОБРАБОТЧИКИ */
 try { const b = $('addBtn'); if (b) b.addEventListener('click', openSheetToday); } catch(e) {}
