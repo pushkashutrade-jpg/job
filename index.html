@@ -1032,17 +1032,21 @@ function getMachinesDotClass(entry) {
 function updateWorkdaysInfo(y, m) {
     const el = $('calWorkdays');
     if (!el) return;
+
     const worked = calcMonthStatsForYearMonth(y, m).workDays;
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const lastDay = new Date(y, m + 1, 0);
     let left = 0;
+
     for (let d = new Date(y, m, 1); d <= lastDay; d.setDate(d.getDate() + 1)) {
         const wd = d.getDay();
         if (wd === 0 || wd === 6) continue;
         if (d < today) continue;
         left++;
     }
+
     el.innerHTML = 'Отработано <b>' + worked + '</b> · осталось <b>' + left + '</b>';
 }
 
@@ -1073,10 +1077,13 @@ function calcMonthStatsForYearMonth(y, m) {
             }
         }
     });
+
     const machinesOver = Math.max(0, totalMachines - workDays);
     const bonusMachinesSum = machinesOver * MACHINE_BONUS() * (1 - TAX());
+
     const bonusNet = bonusLinesSum + bonusMachinesSum;
     const total = salarySum + bonusNet;
+
     return {
         year: y, month: m,
         totalLines, totalMachines, workDays,
@@ -1107,15 +1114,18 @@ function progressClass(percent) {
 function checkMonthClosure() {
     const now = new Date();
     const currentKey = monthKey(now.getFullYear(), now.getMonth());
+
     const data = loadData();
     const monthsWithData = new Set();
     Object.keys(data).forEach(key => {
         const p = String(key).split('-');
         if (p.length >= 2) monthsWithData.add(p[0] + '-' + p[1]);
     });
+
     monthsWithData.forEach(mk => {
         if (mk === currentKey) return;
         if (closedMonths[mk]) return;
+
         const parts = mk.split('-').map(Number);
         const stats = calcMonthStatsForYearMonth(parts[0], parts[1] - 1);
         closedMonths[mk] = {
@@ -1134,6 +1144,7 @@ function checkMonthClosure() {
             closedAt: Date.now()
         };
     });
+
     persistClosedMonths(closedMonths);
 }
 
@@ -1141,10 +1152,12 @@ function showClosureNotificationIfNeeded() {
     const lastOpened = safeGet(LAST_OPENED_KEY, null);
     const now = new Date();
     const currentKey = monthKey(now.getFullYear(), now.getMonth());
+
     if (lastOpened && lastOpened !== currentKey && closedMonths[lastOpened]) {
         const c = closedMonths[lastOpened];
         const parts = lastOpened.split('-').map(Number);
         const monthName = MONTHS_RU[parts[1] - 1] + ' ' + parts[0];
+
         setTimeout(() => {
             showToast({
                 type: 'success',
@@ -1159,6 +1172,7 @@ function showClosureNotificationIfNeeded() {
             });
         }, 800);
     }
+
     safeSet(LAST_OPENED_KEY, currentKey);
 }
 
@@ -1169,6 +1183,7 @@ function renderHome() {
         const viewDate = parseKey(viewDateKey);
         const isToday = viewDateKey === getTodayKey();
         const isViewWeekend = isWeekend(viewDate);
+
         const tl = $('todayLines'); if (tl) tl.textContent = Number(view.lines) || 0;
         const tm = $('todayMachines'); if (tm) tm.textContent = Number(view.machines) || 0;
         const mdl = $('mainDayLabel');
@@ -1176,6 +1191,7 @@ function renderHome() {
             if (isToday) mdl.textContent = 'сегодня';
             else mdl.textContent = DAYS_RU_SHORT[viewDate.getDay()] + ', ' + viewDate.getDate() + ' ' + MONTHS_RU_SHORT[viewDate.getMonth()];
         }
+
         try { renderGoals(); } catch(e) { console.warn('renderGoals fail', e); }
         try { renderStreak(); } catch(e) { console.warn('renderStreak fail', e); }
         try {
@@ -1183,16 +1199,19 @@ function renderHome() {
             if (w && w.classList.contains('expanded')) renderMonth(currentMonth);
             else renderWeek(data);
         } catch(e) { console.warn('renderCalendar fail', e); }
+
         const di = $('dayIncome');
         if (di) {
             if (isViewWeekend || !view.worked) di.textContent = '—';
             else di.textContent = formatMoney(calcDayIncome(view));
         }
+
         const b = $('bonus');
         const bh = $('bonusHint');
         const month = calcMonthStats();
         const now = new Date();
         const currentKey = monthKey(now.getFullYear(), now.getMonth());
+
         if (closedMonths[currentKey]) {
             if (b) b.textContent = formatMoney(closedMonths[currentKey].bonusNet);
             if (bh) bh.textContent = 'Месяц закрыт';
@@ -1206,6 +1225,7 @@ function renderHome() {
                 }
             }
         }
+
         const s = $('salary');
         if (s) {
             if (closedMonths[currentKey]) {
@@ -1227,6 +1247,7 @@ function renderGoals() {
     const el3 = $('monthLinesBar');
     if (el3) { el3.style.width = linesPercent + '%'; el3.className = 'progress-fill ' + progressClass(linesPercent); }
     const el4 = $('monthLinesPercent'); if (el4) el4.textContent = linesPercent + '% от цели';
+
     const machinesGoal = GOAL_MACHINES();
     const machinesPercent = machinesGoal > 0 ? Math.min(100, Math.round((month.totalMachines / machinesGoal) * 100)) : 0;
     const el5 = $('monthMachinesTotal'); if (el5) el5.textContent = month.totalMachines;
@@ -1274,13 +1295,16 @@ function calcMonthAverage(data, y, m) {
 
 function renderWeek(data) {
     if (!data) data = loadData();
+
     updateCalGoalBadge();
+
     const now = new Date();
     const todayKey = dateKey(now);
     const monday = new Date(now);
     const day = (monday.getDay() + 6) % 7;
     monday.setDate(monday.getDate() - day + weekOffset * 7);
     monday.setHours(0, 0, 0, 0);
+
     const startMonth = monday.getMonth();
     const endDate = new Date(monday.getTime() + 6 * 86400000);
     const endMonth = endDate.getMonth();
@@ -1288,10 +1312,13 @@ function renderWeek(data) {
     let monthLabel;
     if (startMonth === endMonth) monthLabel = MONTHS_RU[startMonth] + ' ' + year;
     else monthLabel = MONTHS_RU[startMonth] + ' – ' + MONTHS_RU[endMonth] + ' ' + year;
+
     const cm = $('calMonth'); if (cm) cm.textContent = monthLabel;
+
     const wd = $('weekDays');
     if (!wd) return;
     wd.innerHTML = '';
+
     for (let i = 0; i < 7; i++) {
         const d = new Date(monday);
         d.setDate(monday.getDate() + i);
@@ -1301,10 +1328,12 @@ function renderWeek(data) {
         const status = weekend ? 'weekend' : getDayStatus(entry);
         const isToday = key === todayKey;
         const isViewSelected = key === viewDateKey;
+
         const item = document.createElement('div');
         item.className = 'day-item';
         item.dataset.date = key;
         if (weekend) item.dataset.weekend = '1';
+
         const dot = document.createElement('div');
         dot.className = 'day-dot ' + status;
         if (isToday) dot.classList.add('today-ring');
@@ -1314,13 +1343,16 @@ function renderWeek(data) {
             if (mcls) dot.classList.add(mcls);
         }
         dot.textContent = d.getDate();
+
         const label = document.createElement('div');
         label.className = 'day-label' + (isToday ? ' active' : '');
         label.textContent = DAYS_RU[i];
+
         item.appendChild(dot);
         item.appendChild(label);
         wd.appendChild(item);
     }
+
     const avg = calcWeekAverage(data, monday);
     const ca = $('calAvg');
     if (ca) {
@@ -1330,6 +1362,7 @@ function renderWeek(data) {
             ca.innerHTML = '<b>—</b><span>в среднем</span>';
         }
     }
+
     const ref = new Date(monday.getTime() + 3 * 86400000);
     updateWorkdaysInfo(ref.getFullYear(), ref.getMonth());
 }
@@ -1337,7 +1370,9 @@ function renderWeek(data) {
 function renderMonth(date) {
     const cm = $('calMonth');
     if (cm) cm.textContent = MONTHS_RU[date.getMonth()] + ' ' + date.getFullYear();
+
     updateCalGoalBadge();
+
     const data = loadData();
     const y = date.getFullYear();
     const m = date.getMonth();
@@ -1379,6 +1414,7 @@ function renderMonth(date) {
         item.appendChild(dot);
         wd.appendChild(item);
     }
+
     const avg = calcMonthAverage(data, y, m);
     const ca = $('calAvg');
     if (ca) {
@@ -1388,6 +1424,7 @@ function renderMonth(date) {
             ca.innerHTML = '<b>—</b><span>в среднем</span>';
         }
     }
+
     updateWorkdaysInfo(y, m);
 }
 
@@ -1412,8 +1449,10 @@ function collapseCalendar() {
     const wd = $('weekDays');
     const wdContainer = $('weekDaysContainer');
     if (!wd || !wdContainer) return;
+
     let startX = 0, startY = 0, startTime = 0;
     let isDragging = false;
+
     wdContainer.addEventListener('touchstart', (e) => {
         const t = e.touches[0];
         startX = t.clientX;
@@ -1423,6 +1462,7 @@ function collapseCalendar() {
         wd.classList.remove('animating');
         wd.style.transition = 'none';
     }, { passive: true });
+
     wdContainer.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
         const t = e.touches[0];
@@ -1433,22 +1473,28 @@ function collapseCalendar() {
             wd.style.opacity = Math.max(0.3, 1 - Math.abs(dx) / 300);
         }
     }, { passive: true });
+
     wdContainer.addEventListener('touchend', (e) => {
         if (!isDragging) return;
         isDragging = false;
+
         const t = e.changedTouches[0];
         const dx = t.clientX - startX;
         const dy = t.clientY - startY;
         const dt = Date.now() - startTime;
         const velocity = Math.abs(dx) / Math.max(dt, 1);
+
         const isExpanded = $('calendarWrapper').classList.contains('expanded');
         const threshold = Math.abs(dx) > 40 || velocity > 0.3;
+
         if (threshold && Math.abs(dx) > Math.abs(dy)) {
             const direction = dx < 0 ? 'left' : 'right';
+
             wd.classList.add('animating');
             wd.style.transition = '';
             wd.style.transform = 'translateX(' + (direction === 'left' ? -100 : 100) + 'px)';
             wd.style.opacity = '0';
+
             setTimeout(() => {
                 if (isExpanded) {
                     if (direction === 'left') currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
@@ -1459,15 +1505,18 @@ function collapseCalendar() {
                     else weekOffset -= 1;
                     renderWeek(loadData());
                 }
+
                 wd.style.transition = 'none';
                 wd.style.transform = 'translateX(' + (direction === 'left' ? 60 : -60) + 'px)';
                 wd.style.opacity = '0';
+
                 requestAnimationFrame(() => {
                     wd.classList.add('animating');
                     wd.style.transition = '';
                     wd.style.transform = 'translateX(0)';
                     wd.style.opacity = '1';
                 });
+
                 setTimeout(() => {
                     wd.classList.remove('animating');
                     wd.style.transition = '';
@@ -1487,6 +1536,7 @@ function collapseCalendar() {
             }, 320);
         }
     }, { passive: true });
+
     wd.addEventListener('click', (e) => {
         const item = e.target.closest('.day-item');
         if (!item) return;
@@ -1512,14 +1562,18 @@ function collapseCalendar() {
 function showDayDetails(key) {
     viewDateKey = key;
     renderHome();
+
     const data = loadData();
     const entry = data[key] || { lines: 0, machines: 0, worked: false };
     const date = parseKey(key);
     const weekend = isWeekend(date);
+
     const t = $('dayDetailsTitle');
     if (t) t.textContent = DAYS_RU_SHORT[date.getDay()] + ', ' + date.getDate() + ' ' + MONTHS_RU[date.getMonth()];
+
     const dl = $('ddLines'); if (dl) dl.textContent = Number(entry.lines) || 0;
     const dm = $('ddMachines'); if (dm) dm.textContent = Number(entry.machines) || 0;
+
     const di = $('ddIncome');
     const db = $('ddBonus');
     if (!entry.worked || weekend) {
@@ -1529,6 +1583,7 @@ function showDayDetails(key) {
         if (di) di.textContent = formatMoney(calcDayIncome(entry));
         if (db) db.textContent = formatMoney(calcDayBonus(entry.lines || 0, entry.machines || 0));
     }
+
     const yb = $('ddWorkYes');
     const nb = $('ddWorkNo');
     const ab = $('ddAdd');
@@ -1543,6 +1598,7 @@ function showDayDetails(key) {
     }
     if (yb) yb.classList.toggle('active', entry.worked === true && !weekend);
     if (nb) nb.classList.toggle('active', entry.worked === false && !weekend);
+
     const dd = $('dayDetails'); if (dd) dd.style.display = 'block';
 }
 
@@ -1621,10 +1677,12 @@ function renderStats() {
     const list = $('statsList');
     if (!list) return;
     list.innerHTML = '';
+
     if (statsOpenedMonthKey) {
         const parts = statsOpenedMonthKey.split('-').map(Number);
         const y = parts[0], m = parts[1] - 1;
         const stats = closedMonths[monthKey(y, m)] || calcMonthStatsForYearMonth(y, m);
+
         const block = document.createElement('div');
         block.className = 'stats-detail';
         block.innerHTML =
@@ -1639,6 +1697,7 @@ function renderStats() {
             '<div class="stats-row"><div class="stats-row-label">Оклад</div><div class="stats-row-value">' + formatMoney(stats.salaryNet) + '</div></div>' +
             '<div class="stats-row"><div class="stats-row-label">Итого на руки</div><div class="stats-row-value green big">' + formatMoney(stats.total) + '</div></div>';
         list.appendChild(block);
+
         const backBtn = document.createElement('button');
         backBtn.className = 'sheet-btn cancel';
         backBtn.style.marginTop = '8px';
@@ -1650,21 +1709,26 @@ function renderStats() {
         list.appendChild(backBtn);
         return;
     }
+
     const data = loadData();
     const monthsWithData = new Set();
     Object.keys(data).forEach(key => {
         const p = String(key).split('-');
         if (p.length >= 2) monthsWithData.add(p[0] + '-' + p[1]);
     });
+
     const arr = Array.from(monthsWithData).sort().reverse();
+
     if (arr.length === 0) {
         list.innerHTML = '<div class="empty-state">Пока нет данных.<br>Внесите их на главной.</div>';
         return;
     }
+
     arr.forEach(mk => {
         const parts = mk.split('-').map(Number);
         const y = parts[0], m = parts[1] - 1;
         const stats = closedMonths[monthKey(y, m)] || calcMonthStatsForYearMonth(y, m);
+
         const item = document.createElement('div');
         item.className = 'stats-month-item';
         item.innerHTML =
@@ -1698,6 +1762,7 @@ function renderSavings() {
             if (selected) hs.textContent = formatPercent(selected.percent) + ' от ЗП';
             else hs.textContent = 'Нет выбранного накопления';
         }
+
         const list = $('savingsList');
         if (list) {
             list.innerHTML = '';
